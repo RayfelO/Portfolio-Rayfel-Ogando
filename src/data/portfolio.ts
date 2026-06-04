@@ -123,7 +123,7 @@ export const projects: Project[] = [
 		descriptionEn:
 			"System for the management and assessment of ABET educational accreditation criteria.",
 		languages: ["C#", ".NET Core", "EF Core"],
-		images: [dashboardMockup, codeMockup, ecommerceMockup],
+		images: [],
 		githubUrl: "https://github.com/RayfelO/AvaluoBackend",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/AvaluoBackend/main/README.md",
@@ -158,7 +158,7 @@ export const projects: Project[] = [
 		descriptionEn:
 			"Academic application for student administration and grade reporting.",
 		languages: ["React", "Django", "CSS"],
-		images: [dashboardMockup, ecommerceMockup, codeMockup],
+		images: [],
 		githubUrl: "https://github.com/RayfelO/Estudiantes-React-Django",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/Estudiantes-React-Django/main/README.md",
@@ -176,7 +176,7 @@ export const projects: Project[] = [
 		descriptionEn:
 			"Graphical calculator developed in Python with a Flask backend for complex calculations.",
 		languages: ["Python", "Flask", "Tkinter"],
-		images: [basicCalculatorImg, codeMockup, dashboardMockup],
+		images: [basicCalculatorImg],
 		githubUrl: "https://github.com/RayfelO/BasicCalculator-Tkinter-Python",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/BasicCalculator-Tkinter-Python/main/README.md",

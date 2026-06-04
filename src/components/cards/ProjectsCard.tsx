@@ -142,31 +142,35 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 			/>
 			<div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
 
-			<button
-				type="button"
-				onClick={handlePrev}
-				className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 border border-white/10 hover:bg-black/85 flex items-center justify-center text-white transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer select-none z-10"
-			>
-				<ChevronLeft size={16} />
-			</button>
-			<button
-				type="button"
-				onClick={handleNext}
-				className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 border border-white/10 hover:bg-black/85 flex items-center justify-center text-white transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer select-none z-10"
-			>
-				<ChevronRight size={16} />
-			</button>
+			{images.length > 1 && (
+				<>
+					<button
+						type="button"
+						onClick={handlePrev}
+						className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 border border-white/10 hover:bg-black/85 flex items-center justify-center text-white transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer select-none z-10"
+					>
+						<ChevronLeft size={16} />
+					</button>
+					<button
+						type="button"
+						onClick={handleNext}
+						className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 border border-white/10 hover:bg-black/85 flex items-center justify-center text-white transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer select-none z-10"
+					>
+						<ChevronRight size={16} />
+					</button>
 
-			<div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 select-none">
-				{images.map((_, idx) => (
-					<span
-						key={images[idx]}
-						className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
-							idx === currentIndex ? "bg-white scale-125" : "bg-white/40"
-						}`}
-					/>
-				))}
-			</div>
+					<div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 select-none">
+						{images.map((_, idx) => (
+							<span
+								key={images[idx]}
+								className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+									idx === currentIndex ? "bg-white scale-125" : "bg-white/40"
+								}`}
+							/>
+						))}
+					</div>
+				</>
+			)}
 		</div>
 	);
 };
@@ -389,7 +393,7 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 
 			{/* Bento C: Images Carousel / YouTube player container */}
 			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl overflow-hidden relative aspect-video md:aspect-[21/9] bg-black/10">
-				{project.youtubeUrl && (
+				{project.youtubeUrl && project.images.length > 0 && (
 					<div className="absolute top-3 right-3 z-20 flex bg-black/60 backdrop-blur-xs border border-white/10 rounded-lg p-0.5 select-none">
 						<button
 							type="button"
@@ -528,10 +532,15 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 
 	// Reset media tab state when switching projects
 	useEffect(() => {
-		if (activeProjectId) {
-			setMediaTab("mockups");
+		if (currentActiveProject) {
+			setMediaTab(
+				currentActiveProject.images.length === 0 &&
+					currentActiveProject.youtubeUrl
+					? "video"
+					: "mockups",
+			);
 		}
-	}, [activeProjectId]);
+	}, [currentActiveProject]);
 
 	const handleOpenReadme = (project: Project) => {
 		setSelectedProject(project);
