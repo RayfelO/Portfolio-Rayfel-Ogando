@@ -316,14 +316,20 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 }) => {
 	const showGithub = !!project.githubUrl;
 	const showLive = !!project.liveUrl;
+	const showReadme = !!project.readmeUrl;
+
+	const totalCards =
+		(showGithub ? 1 : 0) + (showLive ? 1 : 0) + (showReadme ? 1 : 0);
 
 	// Compute link grid column configuration dynamically
-	const colsClass =
-		showGithub && showLive
-			? "grid-cols-1 sm:grid-cols-3"
-			: showGithub || showLive
-				? "grid-cols-1 sm:grid-cols-2"
-				: "grid-cols-1";
+	let colsClass = "grid-cols-1 sm:grid-cols-3";
+	if (totalCards === 1) {
+		colsClass = "grid-cols-1";
+	} else if (totalCards === 2) {
+		colsClass = "grid-cols-1 sm:grid-cols-2";
+	} else if (totalCards === 3) {
+		colsClass = "grid-cols-1 sm:grid-cols-3";
+	}
 
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
@@ -429,39 +435,34 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 			</div>
 
 			{/* Bento D: Row of Interactive link cards */}
-			<div className={`sm:col-span-6 grid gap-3 ${colsClass}`}>
-				{showGithub && project.githubUrl && (
-					<LinkCard
-						href={project.githubUrl}
-						icon={<GithubIcon size={18} />}
-						label="GitHub"
-						title={lang === "es" ? "Código fuente" : "Source code"}
-					/>
-				)}
-				{showLive && project.liveUrl && (
-					<LinkCard
-						href={project.liveUrl}
-						icon={<Globe size={18} />}
-						label={lang === "es" ? "Despliegue" : "Deployment"}
-						title={lang === "es" ? "Demo en vivo" : "Live demo"}
-					/>
-				)}
-				<LinkCard
-					onClick={() => onOpenReadme(project)}
-					icon={<BookOpen size={18} />}
-					label="Markdown"
-					title={
-						project.readmeUrl
-							? lang === "es"
-								? "Ver README"
-								: "View README"
-							: lang === "es"
-								? "Documentación"
-								: "Documentation"
-					}
-					className={!showGithub && !showLive ? "col-span-full" : ""}
-				/>
-			</div>
+			{totalCards > 0 && (
+				<div className={`sm:col-span-6 grid gap-3 ${colsClass}`}>
+					{showGithub && project.githubUrl && (
+						<LinkCard
+							href={project.githubUrl}
+							icon={<GithubIcon size={18} />}
+							label="GitHub"
+							title={lang === "es" ? "Código fuente" : "Source code"}
+						/>
+					)}
+					{showLive && project.liveUrl && (
+						<LinkCard
+							href={project.liveUrl}
+							icon={<Globe size={18} />}
+							label={lang === "es" ? "Despliegue" : "Deployment"}
+							title={lang === "es" ? "Demo en vivo" : "Live demo"}
+						/>
+					)}
+					{showReadme && (
+						<LinkCard
+							onClick={() => onOpenReadme(project)}
+							icon={<BookOpen size={18} />}
+							label="Markdown"
+							title={lang === "es" ? "Ver README" : "View README"}
+						/>
+					)}
+				</div>
+			)}
 		</div>
 	);
 };
