@@ -355,7 +355,7 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 			</div>
 
 			{/* Bento C: Images Carousel / YouTube player container */}
-			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl overflow-hidden flex flex-col relative min-h-[260px] md:min-h-[300px]">
+			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl overflow-hidden relative aspect-video md:aspect-[21/9] bg-black/10">
 				{project.youtubeUrl && (
 					<div className="absolute top-3 right-3 z-20 flex bg-black/60 backdrop-blur-xs border border-white/10 rounded-lg p-0.5 select-none">
 						<button
@@ -388,19 +388,17 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 					</div>
 				)}
 
-				<div className="flex-1 w-full relative aspect-video md:aspect-[21/9] bg-black/10">
-					{mediaTab === "video" && project.youtubeUrl ? (
-						<iframe
-							src={project.youtubeUrl}
-							title={`${project.name} video demo`}
-							className="absolute inset-0 w-full h-full border-0"
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-							allowFullScreen
-						/>
-					) : (
-						<ImageCarousel images={project.images} projectName={project.name} />
-					)}
-				</div>
+				{mediaTab === "video" && project.youtubeUrl ? (
+					<iframe
+						src={project.youtubeUrl}
+						title={`${project.name} video demo`}
+						className="absolute inset-0 w-full h-full border-0"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+						allowFullScreen
+					/>
+				) : (
+					<ImageCarousel images={project.images} projectName={project.name} />
+				)}
 			</div>
 
 			{/* Bento D: Row of Interactive link cards */}
