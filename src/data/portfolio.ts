@@ -17,6 +17,10 @@ export const ProjectSchema = z.object({
 	readmeContentEs: z.string().optional(),
 	readmeContentEn: z.string().optional(),
 	youtubeUrl: z.string().optional(),
+	startDateEs: z.string(),
+	startDateEn: z.string(),
+	endDateEs: z.string().optional(),
+	endDateEn: z.string().optional(),
 });
 
 export type Project = z.infer<typeof ProjectSchema>;
@@ -99,6 +103,10 @@ export const projects: Project[] = [
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/EMMAX-Angular-.Net-SQLServer/main/README.MD",
 		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+		startDateEs: "oct. 2024",
+		startDateEn: "Oct 2024",
+		endDateEs: "dic. 2024",
+		endDateEn: "Dec 2024",
 	},
 	{
 		id: "avaluo",
@@ -112,6 +120,10 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/AvaluoBackend",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/AvaluoBackend/main/README.md",
+		startDateEs: "ago. 2024",
+		startDateEn: "Aug 2024",
+		endDateEs: "oct. 2024",
+		endDateEn: "Oct 2024",
 	},
 	{
 		id: "apihotel",
@@ -125,6 +137,10 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/ApiHotel",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/ApiHotel/main/README.md",
+		startDateEs: "jun. 2024",
+		startDateEn: "Jun 2024",
+		endDateEs: "jul. 2024",
+		endDateEn: "Jul 2024",
 	},
 	{
 		id: "estudiantes",
@@ -138,6 +154,10 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/Estudiantes-React-Django",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/Estudiantes-React-Django/main/README.md",
+		startDateEs: "feb. 2024",
+		startDateEn: "Feb 2024",
+		endDateEs: "abr. 2024",
+		endDateEn: "Apr 2024",
 	},
 	{
 		id: "calculator",
@@ -151,6 +171,10 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/BasicCalculator-Tkinter-Python",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/BasicCalculator-Tkinter-Python/main/README.md",
+		startDateEs: "ene. 2023",
+		startDateEn: "Jan 2023",
+		endDateEs: "feb. 2023",
+		endDateEn: "Feb 2023",
 	},
 ];
 
@@ -250,6 +274,8 @@ export const privateProjects: Project[] = [
 			"# Sistema Corporativo Enterprise\n\nSistema integral diseñado para automatizar y optimizar las operaciones comerciales medianas y grandes, incluyendo facturación electrónica dominicana, gestión de almacenes en tiempo real y reportería financiera consolidada.\n\n### Tecnologías Utilizadas\n- **Backend:** C# con .NET Core, EF Core\n- **Frontend:** Angular, TailwindCSS\n- **Bases de Datos:** SQL Server\n\n### Características Clave\n- Módulo de facturación electrónica certificado por la DGII.\n- Control de stock multi-almacén con alertas de reabastecimiento automático.\n- Dashboard de KPIs financieros interactivo.",
 		readmeContentEn:
 			"# Enterprise Corporate System\n\nComprehensive system designed to automate and optimize mid to large-scale business operations, including Dominican electronic invoicing, real-time warehouse management, and consolidated financial reporting.\n\n### Technologies Used\n- **Backend:** C# with .NET Core, EF Core\n- **Frontend:** Angular, TailwindCSS\n- **Databases:** SQL Server\n\n### Key Features\n- Electronic invoicing module certified by DGII.\n- Multi-warehouse inventory control with auto-restock alerts.\n- Interactive financial KPIs dashboard.",
+		startDateEs: "ene. 2025",
+		startDateEn: "Jan 2025",
 	},
 	{
 		id: "internal-control",
@@ -266,6 +292,10 @@ export const privateProjects: Project[] = [
 		readmeContentEn:
 			"# Internal Control Dashboard\n\nBusiness intelligence platform for continuous monitoring of operational metrics, database security audits, and corporate access control.\n\n### Technologies Used\n- **Backend:** .NET Core REST API\n- **Frontend:** React, TailwindCSS, Recharts\n- **Databases:** MongoDB\n\n### Key Features\n- Real-time interactive performance and response time charts.\n- Automated auditing of suspicious transactions and security alerts.\n- Structured user profile and permission configuration panel.",
 		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+		startDateEs: "oct. 2024",
+		startDateEn: "Oct 2024",
+		endDateEs: "dic. 2024",
+		endDateEn: "Dec 2024",
 	},
 	{
 		id: "nda-app",
@@ -280,6 +310,10 @@ export const privateProjects: Project[] = [
 			"# Aplicación Protegida por NDA\n\nEste proyecto es una aplicación patentada desarrollada bajo un estricto acuerdo de no divulgación (NDA). Ofrece un motor de procesamiento de transacciones financieras de alta disponibilidad con colas de mensajería asíncronas y caching en memoria.\n\n### Tecnologías Utilizadas\n- **Backend:** Node.js, NestJS, TypeScript\n- **Bases de Datos:** Oracle Database\n- **Infraestructura:** Docker, Redis\n\n### Características Clave\n- Procesamiento asíncrono con colas de mensajes de alta velocidad.\n- Sistema de auditoría encriptado de extremo a extremo.\n- Optimización de consultas complejas PL/SQL para reportes transaccionales.",
 		readmeContentEn:
 			"# NDA Protected App\n\nThis project is a proprietary application developed under a strict Non-Disclosure Agreement (NDA). It delivers a high-availability financial transaction processing engine with asynchronous message queuing and in-memory caching.\n\n### Technologies Used\n- **Backend:** Node.js, NestJS, TypeScript\n- **Databases:** Oracle Database\n- **Infrastructure:** Docker, Redis\n\n### Key Features\n- Asynchronous processing with high-velocity message queues.\n- End-to-end encrypted auditing system.\n- Optimization of complex PL/SQL queries for transactional reporting.",
+		startDateEs: "sep. 2024",
+		startDateEn: "Sep 2024",
+		endDateEs: "nov. 2024",
+		endDateEn: "Nov 2024",
 	},
 ];
 

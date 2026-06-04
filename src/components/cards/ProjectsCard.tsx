@@ -218,17 +218,26 @@ const LinkCard: React.FC<LinkCardProps> = ({
 	);
 };
 
+// Helper to extract and format project date range cleanly
+const getProjectDateText = (project: Project, lang: "en" | "es") => {
+	const start = lang === "es" ? project.startDateEs : project.startDateEn;
+	const end = lang === "es" ? project.endDateEs : project.endDateEn;
+	return end ? `${start} - ${end}` : start;
+};
+
 // --- PROJECT SELECTOR COMPONENT ---
 interface ProjectSelectorProps {
 	activeProjects: Project[];
 	activeProjectId: string;
 	onSelect: (id: string, name: string) => void;
+	lang: "en" | "es";
 }
 
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 	activeProjects,
 	activeProjectId,
 	onSelect,
+	lang,
 }) => {
 	return (
 		<>
@@ -241,20 +250,25 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 							key={p.id}
 							type="button"
 							onClick={() => onSelect(p.id, p.name)}
-							className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border flex items-center gap-1.5 cursor-pointer transition-colors ${
+							className={`flex-shrink-0 px-3.5 py-2 rounded-xl border flex flex-col gap-0.5 cursor-pointer transition-colors text-left ${
 								active
-									? "bg-[var(--bg-subtle)] border-[var(--border-hover)] text-primary font-semibold"
+									? "bg-[var(--bg-subtle)] border-[var(--border-hover)] text-primary font-medium"
 									: "bg-transparent border-[var(--border-default)] text-secondary hover:text-primary"
 							}`}
 						>
-							<span
-								className={`w-1.5 h-1.5 rounded-full transition-all ${
-									active
-										? "bg-[var(--accent-light)] scale-110"
-										: "border border-[var(--border-default)]"
-								}`}
-							/>
-							{p.name}
+							<div className="flex items-center gap-1.5 text-[12.5px] font-semibold">
+								<span
+									className={`w-1.5 h-1.5 rounded-full transition-all ${
+										active
+											? "bg-[var(--accent-light)] scale-110"
+											: "border border-[var(--border-default)]"
+									}`}
+								/>
+								{p.name}
+							</div>
+							<div className="pl-3 text-[9.5px] font-mono text-muted">
+								{getProjectDateText(p, lang)}
+							</div>
 						</button>
 					);
 				})}
@@ -269,13 +283,13 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 							key={p.id}
 							type="button"
 							onClick={() => onSelect(p.id, p.name)}
-							className={`w-full text-left px-3.5 py-3 rounded-lg flex items-center justify-between transition-all cursor-pointer border select-none ${
+							className={`w-full text-left px-3.5 py-2.5 rounded-lg flex flex-col gap-1 transition-all cursor-pointer border select-none ${
 								active
 									? "bg-[var(--bg-subtle)] border-[var(--border-default)] text-primary font-semibold shadow-xs"
 									: "bg-transparent border-transparent text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/40"
 							}`}
 						>
-							<div className="flex items-center gap-2.5 truncate">
+							<div className="flex items-center gap-2.5 min-w-0 w-full">
 								<span
 									className={`w-2 h-2 rounded-full flex-shrink-0 transition-all ${
 										active
@@ -283,11 +297,13 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 											: "border border-[var(--border-default)]"
 									}`}
 								/>
-								<span className="truncate text-[13.5px]">{p.name}</span>
+								<span className="truncate text-[13.5px] font-bold">
+									{p.name}
+								</span>
 							</div>
-							<span className="font-mono text-[10px] text-muted flex-shrink-0 ml-2">
-								{p.languages[0]}
-							</span>
+							<div className="pl-4.5 text-[10px] font-mono text-muted">
+								{getProjectDateText(p, lang)}
+							</div>
 						</button>
 					);
 				})}
@@ -335,9 +351,12 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 			{/* Bento A: Description & Languages */}
 			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between gap-4 text-left">
 				<div>
-					<h3 className="text-[17px] font-bold text-primary tracking-tight mb-2">
+					<h3 className="text-[17px] font-bold text-primary tracking-tight">
 						{project.name}
 					</h3>
+					<span className="block font-mono text-[11px] text-muted mb-2 animate-fade-in">
+						{getProjectDateText(project, lang)}
+					</span>
 					<p className="text-[14.5px] text-secondary leading-relaxed">
 						{lang === "es" ? project.descriptionEs : project.descriptionEn}
 					</p>
@@ -547,6 +566,7 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 					<ProjectSelector
 						activeProjects={activeProjects}
 						activeProjectId={activeProjectId}
+						lang={lang}
 						onSelect={(id, name) => {
 							setActiveProjectId(id);
 							track.projectClicked(name);
