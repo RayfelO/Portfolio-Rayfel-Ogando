@@ -5,6 +5,7 @@ import ecommerceMockup from "../assets/ecommerce_mockup.png";
 import tech4eDashboard from "../assets/Projects/4E-Dashboard.webp";
 import tech4eLanding from "../assets/Projects/4E-Landing.webp";
 import tech4eProductos from "../assets/Projects/4E-Productos.webp";
+import basicCalculatorImg from "../assets/Projects/BasicTkinterCalculator.webp";
 import csCrudIngresos from "../assets/Projects/CS-Crud-de-ingresos.webp";
 import csDashboard from "../assets/Projects/CS-Dashboard.webp";
 import csLogin from "../assets/Projects/CS-Login.webp";
@@ -126,6 +127,7 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/AvaluoBackend",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/AvaluoBackend/main/README.md",
+		youtubeUrl: "https://www.youtube.com/embed/CVELSReGrLg",
 		startDateEs: "ago. 2024",
 		startDateEn: "Aug 2024",
 		endDateEs: "oct. 2024",
@@ -160,6 +162,7 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/Estudiantes-React-Django",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/Estudiantes-React-Django/main/README.md",
+		youtubeUrl: "https://www.youtube.com/embed/5RSPmlTVYOA",
 		startDateEs: "feb. 2024",
 		startDateEn: "Feb 2024",
 		endDateEs: "abr. 2024",
@@ -173,7 +176,7 @@ export const projects: Project[] = [
 		descriptionEn:
 			"Graphical calculator developed in Python with a Flask backend for complex calculations.",
 		languages: ["Python", "Flask", "Tkinter"],
-		images: [codeMockup, ecommerceMockup, dashboardMockup],
+		images: [basicCalculatorImg, codeMockup, dashboardMockup],
 		githubUrl: "https://github.com/RayfelO/BasicCalculator-Tkinter-Python",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/BasicCalculator-Tkinter-Python/main/README.md",
