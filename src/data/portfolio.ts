@@ -139,9 +139,9 @@ export const projects: Project[] = [
 		id: "calculator",
 		name: "BasicCalculator",
 		descriptionEs:
-			"Calculadora gráfica desarrollada en Python con backend Flask para cálculos complejos.",
+			"Una aplicación de escritorio desarrollada con Tkinter y una calculadora web construida con Flask. Ambas permiten realizar operaciones matemáticas básicas de forma sencilla.",
 		descriptionEn:
-			"Graphical calculator developed in Python with a Flask backend for complex calculations.",
+			"A desktop application developed with Tkinter and a web calculator built with Flask. Both allow performing basic mathematical operations easily.",
 		languages: ["Python", "Flask", "Tkinter"],
 		images: [basicCalculatorImg],
 		liveUrl: "https://basictkintercalculator.vercel.app",
