@@ -98,24 +98,6 @@ export type Education = z.infer<typeof EducationSchema>;
 // Verified portfolio data
 export const projects: Project[] = [
 	{
-		id: "emmax",
-		name: "EMMAX",
-		descriptionEs:
-			"Tienda virtual completa con pasarela de e-commerce y panel de administración.",
-		descriptionEn:
-			"Complete virtual store with e-commerce gateway and management dashboard.",
-		languages: ["C#", "Angular", "SQL Server"],
-		images: [ecommerceMockup, dashboardMockup, codeMockup],
-		githubUrl: "https://github.com/RayfelO/EMMAX-Angular-.Net-SQLServer",
-		readmeUrl:
-			"https://raw.githubusercontent.com/RayfelO/EMMAX-Angular-.Net-SQLServer/main/README.MD",
-		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-		startDateEs: "oct. 2024",
-		startDateEn: "Oct 2024",
-		endDateEs: "dic. 2024",
-		endDateEn: "Dec 2024",
-	},
-	{
 		id: "avaluo",
 		name: "Avaluo",
 		descriptionEs:
@@ -136,6 +118,42 @@ export const projects: Project[] = [
 			"# Avaluo System\n\nAssociated with Instituto Tecnológico de Santo Domingo\n\nPlatform designed to automate and organize ABET accreditation processes for Software Engineering, Cybersecurity, and Systems majors at INTEC, centralizing evidence, metrics, and reports for audits and continuous improvement.\n\n### ✅ What it does\n- **Generates key reports**: Student Outcomes (SO) performance by Performance Indicators (PI) (termly), alumni, employers, faculty, and PEO.\n- **Enables role-based workflow**: coordinators (assign SO and plan assessments), professors (assess with digital rubrics and receive notifications), supervisors (track submissions per SO), assistants (convert curricula to syllabux format), and administrators (users, permissions, and integrations).\n- **Offers customized dashboards** and audit logs for traceability of changes in key data.\n\n### 🔌 Institutional integrations\n- Moodle (web service), Academic System (API), and Microsoft Forms/Power Automate for surveys and automated data collection.",
 	},
 	{
+		id: "emmax",
+		name: "EMMAX",
+		descriptionEs:
+			"Tienda virtual completa con pasarela de e-commerce y panel de administración.",
+		descriptionEn:
+			"Complete virtual store with e-commerce gateway and management dashboard.",
+		languages: ["C#", "Angular", "SQL Server"],
+		images: [ecommerceMockup, dashboardMockup, codeMockup],
+		githubUrl: "https://github.com/RayfelO/EMMAX-Angular-.Net-SQLServer",
+		readmeUrl:
+			"https://raw.githubusercontent.com/RayfelO/EMMAX-Angular-.Net-SQLServer/main/README.MD",
+		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+		startDateEs: "21 ago. 2023",
+		startDateEn: "Aug 21, 2023",
+		endDateEs: "19 oct. 2024",
+		endDateEn: "Oct 19, 2024",
+	},
+	{
+		id: "calculator",
+		name: "BasicCalculator",
+		descriptionEs:
+			"Calculadora gráfica desarrollada en Python con backend Flask para cálculos complejos.",
+		descriptionEn:
+			"Graphical calculator developed in Python with a Flask backend for complex calculations.",
+		languages: ["Python", "Flask", "Tkinter"],
+		images: [basicCalculatorImg],
+		liveUrl: "https://basictkintercalculator.vercel.app",
+		githubUrl: "https://github.com/RayfelO/BasicCalculator-Tkinter-Python",
+		readmeUrl:
+			"https://raw.githubusercontent.com/RayfelO/BasicCalculator-Tkinter-Python/main/README.md",
+		startDateEs: "15 sep. 2024",
+		startDateEn: "Sep 15, 2024",
+		endDateEs: "13 oct. 2024",
+		endDateEn: "Oct 13, 2024",
+	},
+	{
 		id: "apihotel",
 		name: "ApiHotel",
 		descriptionEs:
@@ -147,10 +165,10 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/ApiHotel",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/ApiHotel/main/README.md",
-		startDateEs: "jun. 2024",
-		startDateEn: "Jun 2024",
-		endDateEs: "jul. 2024",
-		endDateEn: "Jul 2024",
+		startDateEs: "10 mar. 2023",
+		startDateEn: "Mar 10, 2023",
+		endDateEs: "29 may. 2023",
+		endDateEn: "May 29, 2023",
 	},
 	{
 		id: "estudiantes",
@@ -169,23 +187,6 @@ export const projects: Project[] = [
 		startDateEn: "Mar 2023",
 		endDateEs: "abr. 2023",
 		endDateEn: "Apr 2023",
-	},
-	{
-		id: "calculator",
-		name: "BasicCalculator",
-		descriptionEs:
-			"Calculadora gráfica desarrollada en Python con backend Flask para cálculos complejos.",
-		descriptionEn:
-			"Graphical calculator developed in Python with a Flask backend for complex calculations.",
-		languages: ["Python", "Flask", "Tkinter"],
-		images: [basicCalculatorImg],
-		githubUrl: "https://github.com/RayfelO/BasicCalculator-Tkinter-Python",
-		readmeUrl:
-			"https://raw.githubusercontent.com/RayfelO/BasicCalculator-Tkinter-Python/main/README.md",
-		startDateEs: "ene. 2023",
-		startDateEn: "Jan 2023",
-		endDateEs: "feb. 2023",
-		endDateEn: "Feb 2023",
 	},
 ];
 
@@ -272,24 +273,6 @@ export const techStack: TechGroup[] = [
 
 export const privateProjects: Project[] = [
 	{
-		id: "cs-asesorias",
-		name: "CS-ASESORIAS APP",
-		descriptionEs:
-			"Sistema de gestión financiera pensado para simplificar la administración de ingresos y egresos mensuales.",
-		descriptionEn:
-			"Financial management system designed to simplify monthly income and expense management.",
-		languages: ["Angular", "Node.js", "MySQL"],
-		images: [csDashboard, csCrudIngresos, csLogin],
-		startDateEs: "oct. 2024",
-		startDateEn: "Oct 2024",
-		endDateEs: "mar. 2025",
-		endDateEn: "Mar 2025",
-		readmeContentEs:
-			"# CS-ASESORIAS APP\n\nYa se encuentra operativo el sistema de gestión financiera que desarrollamos en Angular, NodeJs (Express) y MySQL, pensado para simplificar la administración de ingresos y egresos mensuales.\n\n### Principales módulos:\n- **Registro y control de Ingresos**\n- **Gestión de Egresos y Sueldos**\n- **Seguimiento de Inversiones**\n- **Cálculo de Carga Financiera**\n- **Resumen Financiero mensual** con indicadores de estado: 🟢 Pagado / 🔴 No pagado",
-		readmeContentEn:
-			"# CS-ASESORIAS APP\n\nThe financial management system developed in Angular, Node.js (Express), and MySQL is now operational, designed to simplify monthly income and expense management.\n\n### Key Modules:\n- **Income registration and control**\n- **Expense and Salary management**\n- **Investment tracking**\n- **Financial Load calculation**\n- **Monthly Financial Summary** with status indicators: 🟢 Paid / 🔴 Unpaid",
-	},
-	{
 		id: "four-e-technologys",
 		name: "4E Tecnologys",
 		descriptionEs:
@@ -298,6 +281,7 @@ export const privateProjects: Project[] = [
 			"E-commerce platform for technological products (laptops, peripherals, and more), designed to offer a complete experience for both clients and administrators.",
 		languages: ["React", "TypeScript", "Django", "Python", "MongoDB"],
 		images: [tech4eDashboard, tech4eLanding, tech4eProductos],
+		liveUrl: "https://4etecnologys.com/",
 		startDateEs: "abr. 2025",
 		startDateEn: "Apr 2025",
 		endDateEs: "ago. 2025",
@@ -306,6 +290,25 @@ export const privateProjects: Project[] = [
 			"# 4E Tecnologys\n\nPlataforma de e-commerce para productos tecnológicos (laptops, periféricos y más), diseñada para ofrecer una experiencia completa tanto para clientes como para administradores.\n\n### Experiencia para usuarios\n- **Registro e inicio de sesión** (email/contraseña + Google)\n- **Recuperación de contraseña**, perfil e historial de pedidos\n- **Catálogo** con especificaciones técnicas y filtros por categoría/marca\n- **Carrito y checkout** con múltiples métodos de pago (tarjeta, efectivo, transferencia)\n- **Confirmación por correo** y número de seguimiento\n- **Reseñas, calificaciones, cupones y ofertas**\n\n### Panel de administración\n- **CRUD de productos** + gestión de inventario con alertas de stock\n- **Gestión de pedidos** por estado\n- **Usuarios y roles personalizados** + logs de actividad\n- **Reportes de ventas** y ranking de productos",
 		readmeContentEn:
 			"# 4E Tecnologys\n\nE-commerce platform for technological products (laptops, peripherals, and more), designed to offer a complete experience for both clients and administrators.\n\n### User Experience\n- **Registration and login** (email/password + Google)\n- **Password recovery**, profile, and order history\n- **Catalog** with technical specifications and filters by category/brand\n- **Cart and checkout** with multiple payment methods (card, cash, transfer)\n- **Email confirmation** and tracking number\n- **Reviews, ratings, coupons, and offers**\n\n### Admin Dashboard\n- **Product CRUD** + inventory management with stock alerts\n- **Order management** by status\n- **Custom users and roles** + activity logs\n- **Sales reports** and product rankings",
+	},
+	{
+		id: "cs-asesorias",
+		name: "CS-ASESORIAS APP",
+		descriptionEs:
+			"Sistema de gestión financiera pensado para simplificar la administración de ingresos y egresos mensuales.",
+		descriptionEn:
+			"Financial management system designed to simplify monthly income and expense management.",
+		languages: ["Angular", "Node.js", "MySQL"],
+		images: [csDashboard, csCrudIngresos, csLogin],
+		liveUrl: "https://app.csasesorias.cl/",
+		startDateEs: "oct. 2024",
+		startDateEn: "Oct 2024",
+		endDateEs: "mar. 2025",
+		endDateEn: "Mar 2025",
+		readmeContentEs:
+			"# CS-ASESORIAS APP\n\nYa se encuentra operativo el sistema de gestión financiera que desarrollamos en Angular, NodeJs (Express) y MySQL, pensado para simplificar la administración de ingresos y egresos mensuales.\n\n### Principales módulos:\n- **Registro y control de Ingresos**\n- **Gestión de Egresos y Sueldos**\n- **Seguimiento de Inversiones**\n- **Cálculo de Carga Financiera**\n- **Resumen Financiero mensual** con indicadores de estado: 🟢 Pagado / 🔴 No pagado",
+		readmeContentEn:
+			"# CS-ASESORIAS APP\n\nThe financial management system developed in Angular, Node.js (Express), and MySQL is now operational, designed to simplify monthly income and expense management.\n\n### Key Modules:\n- **Income registration and control**\n- **Expense and Salary management**\n- **Investment tracking**\n- **Financial Load calculation**\n- **Monthly Financial Summary** with status indicators: 🟢 Paid / 🔴 Unpaid",
 	},
 ];
 
