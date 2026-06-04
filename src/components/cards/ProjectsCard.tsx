@@ -4,7 +4,6 @@ import {
 	ChevronRight,
 	Globe,
 	Image as ImageIcon,
-	Lock,
 	Play,
 	X,
 } from "lucide-react";
@@ -334,7 +333,7 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
 			{/* Bento A: Description & Languages */}
-			<div className="sm:col-span-4 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between gap-4 text-left">
+			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between gap-4 text-left">
 				<div>
 					<h3 className="text-[17px] font-bold text-primary tracking-tight mb-2">
 						{project.name}
@@ -352,36 +351,6 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 							{langItem}
 						</span>
 					))}
-				</div>
-			</div>
-
-			{/* Bento B: Category Info & License metadata */}
-			<div className="sm:col-span-2 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between text-left">
-				<div>
-					<span className="font-mono text-[10px] text-muted uppercase tracking-wider block mb-1">
-						{lang === "es" ? "Categoría" : "Category"}
-					</span>
-					<h4 className="text-[14px] font-bold text-primary flex items-center gap-1.5">
-						{project.githubUrl ? (
-							<>
-								<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-								{lang === "es" ? "Código Abierto" : "Open Source"}
-							</>
-						) : (
-							<>
-								<span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-								{lang === "es" ? "Privado / NDA" : "Private / NDA"}
-							</>
-						)}
-					</h4>
-				</div>
-				<div className="mt-4 pt-4 border-t border-[var(--border-default)]">
-					<span className="font-mono text-[10px] text-muted uppercase tracking-wider block mb-1">
-						{lang === "es" ? "Licencia" : "License"}
-					</span>
-					<span className="text-[13px] font-mono text-secondary">
-						{project.githubUrl ? "MIT License" : "Proprietary / NDA"}
-					</span>
 				</div>
 			</div>
 
@@ -573,7 +542,6 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 									: "text-secondary hover:text-primary"
 							}`}
 						>
-							<Lock size={11} className="stroke-[2.5]" />
 							{t.projects.privateTab}
 						</button>
 					</div>
