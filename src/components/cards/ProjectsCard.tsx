@@ -458,7 +458,7 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 							href={project.liveUrl}
 							icon={<Globe size={18} />}
 							label={lang === "es" ? "Despliegue" : "Deployment"}
-							title={lang === "es" ? "Demo en vivo" : "Live demo"}
+							title={lang === "es" ? "Visitar sitio" : "Visit site"}
 						/>
 					)}
 					{showReadme && (
