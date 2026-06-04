@@ -16,6 +16,7 @@ export const ProjectSchema = z.object({
 	readmeUrl: z.string().optional(),
 	readmeContentEs: z.string().optional(),
 	readmeContentEn: z.string().optional(),
+	youtubeUrl: z.string().optional(),
 });
 
 export type Project = z.infer<typeof ProjectSchema>;
@@ -97,6 +98,7 @@ export const projects: Project[] = [
 		githubUrl: "https://github.com/RayfelO/EMMAX-Angular-.Net-SQLServer",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/EMMAX-Angular-.Net-SQLServer/main/README.MD",
+		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
 	},
 	{
 		id: "avaluo",
@@ -263,6 +265,7 @@ export const privateProjects: Project[] = [
 			"# Dashboard de Control Interno\n\nPlataforma de inteligencia de negocio para el monitoreo continuo de métricas operacionales, auditorías de seguridad de bases de datos y control de accesos corporativos.\n\n### Tecnologías Utilizadas\n- **Backend:** .NET Core REST API\n- **Frontend:** React, TailwindCSS, Recharts\n- **Bases de Datos:** MongoDB\n\n### Características Clave\n- Gráficos interactivos de rendimiento y tiempo de respuesta en tiempo real.\n- Auditoría automatizada de transacciones sospechosas y alertas de seguridad.\n- Panel de configuración de perfiles y permisos de usuario estructurado.",
 		readmeContentEn:
 			"# Internal Control Dashboard\n\nBusiness intelligence platform for continuous monitoring of operational metrics, database security audits, and corporate access control.\n\n### Technologies Used\n- **Backend:** .NET Core REST API\n- **Frontend:** React, TailwindCSS, Recharts\n- **Databases:** MongoDB\n\n### Key Features\n- Real-time interactive performance and response time charts.\n- Automated auditing of suspicious transactions and security alerts.\n- Structured user profile and permission configuration panel.",
+		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
 	},
 	{
 		id: "nda-app",

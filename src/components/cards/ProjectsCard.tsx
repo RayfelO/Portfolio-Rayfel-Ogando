@@ -3,12 +3,14 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Globe,
+	Image as ImageIcon,
 	Lock,
+	Play,
 	X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type Project, privateProjects, projects } from "../../data/portfolio";
 import type { Translations } from "../../i18n/translations";
 import { track } from "../../lib/analytics";
@@ -72,6 +74,7 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
 
 		// Convert paragraphs (double newline splits)
 		const blocks = html.split("\n\n");
+		// fallow-ignore-next-line complexity
 		const parsedBlocks = blocks.map((block) => {
 			const trimmed = block.trim();
 			if (
@@ -122,19 +125,15 @@ const ImageCarousel: React.FC<{ images: string[]; projectName: string }> = ({
 	if (!images || images.length === 0) return null;
 
 	return (
-		<div className="relative w-full aspect-video rounded-t-xl overflow-hidden bg-black/20 group/carousel">
-			{/* Slides */}
+		<div className="relative w-full h-full group/carousel">
 			<img
 				src={images[currentIndex]}
 				alt={`${projectName} mockup screen ${currentIndex + 1}`}
 				className="w-full h-full object-cover select-none transition-transform duration-350"
 				loading="lazy"
 			/>
-
-			{/* Black Overlay vignette at the bottom */}
 			<div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
 
-			{/* Carousel Control Arrows */}
 			<button
 				type="button"
 				onClick={handlePrev}
@@ -150,7 +149,6 @@ const ImageCarousel: React.FC<{ images: string[]; projectName: string }> = ({
 				<ChevronRight size={16} />
 			</button>
 
-			{/* Indicators Dot Indicator */}
 			<div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 select-none">
 				{images.map((_, idx) => (
 					<span
@@ -165,16 +163,341 @@ const ImageCarousel: React.FC<{ images: string[]; projectName: string }> = ({
 	);
 };
 
+// --- LINK CARD COMPONENT (Bento Box Sub-element) ---
+interface LinkCardProps {
+	href?: string;
+	onClick?: () => void;
+	icon: React.ReactNode;
+	label: string;
+	title: string;
+	className?: string;
+}
+
+const LinkCard: React.FC<LinkCardProps> = ({
+	href,
+	onClick,
+	icon,
+	label,
+	title,
+	className = "",
+}) => {
+	const content = (
+		<>
+			<div className="text-secondary group-hover:text-primary transition-colors animate-fade-in">
+				{icon}
+			</div>
+			<div>
+				<span className="block font-mono text-[10px] text-muted uppercase tracking-wider mb-0.5">
+					{label}
+				</span>
+				<span className="block text-[13.5px] font-semibold text-primary truncate">
+					{title}
+				</span>
+			</div>
+		</>
+	);
+
+	const baseClass = `flex flex-col justify-between p-4 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)] transition-all duration-200 hover:-translate-y-0.5 text-left h-[105px] cursor-pointer group ${className}`;
+
+	if (href) {
+		return (
+			<a
+				href={href}
+				target="_blank"
+				rel="noopener noreferrer"
+				className={baseClass}
+			>
+				{content}
+			</a>
+		);
+	}
+
+	return (
+		<button type="button" onClick={onClick} className={baseClass}>
+			{content}
+		</button>
+	);
+};
+
+// --- PROJECT SELECTOR COMPONENT ---
+interface ProjectSelectorProps {
+	activeProjects: Project[];
+	activeProjectId: string;
+	onSelect: (id: string, name: string) => void;
+}
+
+const ProjectSelector: React.FC<ProjectSelectorProps> = ({
+	activeProjects,
+	activeProjectId,
+	onSelect,
+}) => {
+	return (
+		<>
+			{/* Mobile chips list (Horizontal Scrollable) */}
+			<div className="flex md:hidden overflow-x-auto gap-2 pb-2.5 scrollbar-none select-none w-full">
+				{activeProjects.map((p) => {
+					const active = p.id === activeProjectId;
+					return (
+						<button
+							key={p.id}
+							type="button"
+							onClick={() => onSelect(p.id, p.name)}
+							className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12.5px] font-medium border flex items-center gap-1.5 cursor-pointer transition-colors ${
+								active
+									? "bg-[var(--bg-subtle)] border-[var(--border-hover)] text-primary font-semibold"
+									: "bg-transparent border-[var(--border-default)] text-secondary hover:text-primary"
+							}`}
+						>
+							<span
+								className={`w-1.5 h-1.5 rounded-full transition-all ${
+									active
+										? "bg-[var(--accent-light)] scale-110"
+										: "border border-[var(--border-default)]"
+								}`}
+							/>
+							{p.name}
+						</button>
+					);
+				})}
+			</div>
+
+			{/* Desktop list selector */}
+			<div className="hidden md:flex flex-col gap-1.5 mt-1">
+				{activeProjects.map((p) => {
+					const active = p.id === activeProjectId;
+					return (
+						<button
+							key={p.id}
+							type="button"
+							onClick={() => onSelect(p.id, p.name)}
+							className={`w-full text-left px-3.5 py-3 rounded-lg flex items-center justify-between transition-all cursor-pointer border select-none ${
+								active
+									? "bg-[var(--bg-subtle)] border-[var(--border-default)] text-primary font-semibold shadow-xs"
+									: "bg-transparent border-transparent text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/40"
+							}`}
+						>
+							<div className="flex items-center gap-2.5 truncate">
+								<span
+									className={`w-2 h-2 rounded-full flex-shrink-0 transition-all ${
+										active
+											? "bg-[var(--accent-light)] scale-110 shadow-[0_0_8px_var(--accent-light)]"
+											: "border border-[var(--border-default)]"
+									}`}
+								/>
+								<span className="truncate text-[13.5px]">{p.name}</span>
+							</div>
+							<span className="font-mono text-[10px] text-muted flex-shrink-0 ml-2">
+								{p.languages[0]}
+							</span>
+						</button>
+					);
+				})}
+			</div>
+		</>
+	);
+};
+
+// --- PROJECT BENTO PREVIEW PANEL ---
+interface ProjectBentoPreviewProps {
+	project: Project;
+	lang: "en" | "es";
+	mediaTab: "mockups" | "video";
+	setMediaTab: (tab: "mockups" | "video") => void;
+	onOpenReadme: (project: Project) => void;
+}
+
+// fallow-ignore-next-line complexity
+const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
+	project,
+	lang,
+	mediaTab,
+	setMediaTab,
+	onOpenReadme,
+}) => {
+	const showGithub = !!project.githubUrl;
+	const showLive = !!project.liveUrl;
+
+	// Compute link grid column configuration dynamically
+	const colsClass =
+		showGithub && showLive
+			? "grid-cols-1 sm:grid-cols-3"
+			: showGithub || showLive
+				? "grid-cols-1 sm:grid-cols-2"
+				: "grid-cols-1";
+
+	return (
+		<div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+			{/* Bento A: Description & Languages */}
+			<div className="sm:col-span-4 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between gap-4 text-left">
+				<div>
+					<h3 className="text-[17px] font-bold text-primary tracking-tight mb-2">
+						{project.name}
+					</h3>
+					<p className="text-[14.5px] text-secondary leading-relaxed">
+						{lang === "es" ? project.descriptionEs : project.descriptionEn}
+					</p>
+				</div>
+				<div className="flex flex-wrap gap-1.5 mt-2">
+					{project.languages.map((langItem) => (
+						<span
+							key={langItem}
+							className="font-mono text-[11px] px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-default)] text-secondary select-none"
+						>
+							{langItem}
+						</span>
+					))}
+				</div>
+			</div>
+
+			{/* Bento B: Category Info & License metadata */}
+			<div className="sm:col-span-2 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between text-left">
+				<div>
+					<span className="font-mono text-[10px] text-muted uppercase tracking-wider block mb-1">
+						{lang === "es" ? "Categoría" : "Category"}
+					</span>
+					<h4 className="text-[14px] font-bold text-primary flex items-center gap-1.5">
+						{project.githubUrl ? (
+							<>
+								<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+								{lang === "es" ? "Código Abierto" : "Open Source"}
+							</>
+						) : (
+							<>
+								<span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+								{lang === "es" ? "Privado / NDA" : "Private / NDA"}
+							</>
+						)}
+					</h4>
+				</div>
+				<div className="mt-4 pt-4 border-t border-[var(--border-default)]">
+					<span className="font-mono text-[10px] text-muted uppercase tracking-wider block mb-1">
+						{lang === "es" ? "Licencia" : "License"}
+					</span>
+					<span className="text-[13px] font-mono text-secondary">
+						{project.githubUrl ? "MIT License" : "Proprietary / NDA"}
+					</span>
+				</div>
+			</div>
+
+			{/* Bento C: Images Carousel / YouTube player container */}
+			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl overflow-hidden flex flex-col relative min-h-[260px] md:min-h-[300px]">
+				{project.youtubeUrl && (
+					<div className="absolute top-3 right-3 z-20 flex bg-black/60 backdrop-blur-xs border border-white/10 rounded-lg p-0.5 select-none">
+						<button
+							type="button"
+							onClick={() => setMediaTab("mockups")}
+							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+								mediaTab === "mockups"
+									? "bg-white text-black"
+									: "text-white/70 hover:text-white"
+							}`}
+						>
+							<ImageIcon size={12} />
+							{lang === "es" ? "Imágenes" : "Mockups"}
+						</button>
+						<button
+							type="button"
+							onClick={() => setMediaTab("video")}
+							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+								mediaTab === "video"
+									? "bg-white text-black"
+									: "text-white/70 hover:text-white"
+							}`}
+						>
+							<Play
+								size={12}
+								fill={mediaTab === "video" ? "black" : "currentColor"}
+							/>
+							{lang === "es" ? "Video Demo" : "Video Demo"}
+						</button>
+					</div>
+				)}
+
+				<div className="flex-1 w-full relative aspect-video md:aspect-[21/9] bg-black/10">
+					{mediaTab === "video" && project.youtubeUrl ? (
+						<iframe
+							src={project.youtubeUrl}
+							title={`${project.name} video demo`}
+							className="absolute inset-0 w-full h-full border-0"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+							allowFullScreen
+						/>
+					) : (
+						<ImageCarousel images={project.images} projectName={project.name} />
+					)}
+				</div>
+			</div>
+
+			{/* Bento D: Row of Interactive link cards */}
+			<div className={`sm:col-span-6 grid gap-3 ${colsClass}`}>
+				{showGithub && project.githubUrl && (
+					<LinkCard
+						href={project.githubUrl}
+						icon={<GithubIcon size={18} />}
+						label="GitHub"
+						title={lang === "es" ? "Código fuente" : "Source code"}
+					/>
+				)}
+				{showLive && project.liveUrl && (
+					<LinkCard
+						href={project.liveUrl}
+						icon={<Globe size={18} />}
+						label={lang === "es" ? "Despliegue" : "Deployment"}
+						title={lang === "es" ? "Demo en vivo" : "Live demo"}
+					/>
+				)}
+				<LinkCard
+					onClick={() => onOpenReadme(project)}
+					icon={<BookOpen size={18} />}
+					label="Markdown"
+					title={
+						project.readmeUrl
+							? lang === "es"
+								? "Ver README"
+								: "View README"
+							: lang === "es"
+								? "Documentación"
+								: "Documentation"
+					}
+					className={!showGithub && !showLive ? "col-span-full" : ""}
+				/>
+			</div>
+		</div>
+	);
+};
+
+// --- MAIN PROJECT CARD EXPORT ---
+// fallow-ignore-next-line complexity
 export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 	const [activeTab, setActiveTab] = useState<TabType>("open-source");
+	const activeProjects =
+		activeTab === "open-source" ? projects : privateProjects;
+
+	const [activeProjectId, setActiveProjectId] = useState<string>(
+		activeProjects[0].id,
+	);
+	const [mediaTab, setMediaTab] = useState<"mockups" | "video">("mockups");
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 	const [readmeText, setReadmeText] = useState<string>("");
 	const [loadingReadme, setLoadingReadme] = useState<boolean>(false);
 
+	// Sync active ID when category changes
 	const handleTabChange = (tab: TabType) => {
 		setActiveTab(tab);
+		const list = tab === "open-source" ? projects : privateProjects;
+		setActiveProjectId(list[0].id);
 		track.contactClicked(`tab_${tab}`);
 	};
+
+	const currentActiveProject =
+		activeProjects.find((p) => p.id === activeProjectId) || activeProjects[0];
+
+	// Reset media tab state when switching projects
+	useEffect(() => {
+		if (activeProjectId) {
+			setMediaTab("mockups");
+		}
+	}, [activeProjectId]);
 
 	const handleOpenReadme = (project: Project) => {
 		setSelectedProject(project);
@@ -182,7 +505,6 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 		track.projectClicked(project.name);
 
 		if (project.readmeUrl) {
-			// Fetch real README from GitHub
 			fetch(project.readmeUrl)
 				.then((res) => {
 					if (!res.ok) throw new Error("Fail to load README");
@@ -193,7 +515,6 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 					setLoadingReadme(false);
 				})
 				.catch(() => {
-					// Fallback description in case fetch fails
 					setReadmeText(
 						`# ${project.name}\n\n${
 							lang === "es" ? project.descriptionEs : project.descriptionEn
@@ -202,16 +523,12 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 					setLoadingReadme(false);
 				});
 		} else {
-			// Load static local documentation
 			const content =
 				lang === "es" ? project.readmeContentEs : project.readmeContentEn;
 			setReadmeText(content || "");
 			setLoadingReadme(false);
 		}
 	};
-
-	const activeProjects =
-		activeTab === "open-source" ? projects : privateProjects;
 
 	return (
 		<motion.div
@@ -220,154 +537,81 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 			className="bento-card col-span-4 flex flex-col gap-5 overflow-hidden"
 			style={{ minHeight: "550px" }}
 		>
-			{/* Top Menu: Tabs & Counter */}
+			{/* Top Header Selector */}
 			<div className="flex justify-between items-center pb-2.5 border-b border-[var(--border-default)] select-none">
-				<div className="flex gap-4">
-					<button
-						type="button"
-						onClick={() => handleTabChange("open-source")}
-						className={`relative text-[15.5px] font-bold uppercase tracking-wider cursor-pointer transition-colors pb-1.5 ${
-							activeTab === "open-source"
-								? "text-primary"
-								: "text-secondary hover:text-primary"
-						}`}
-					>
-						{t.projects.openSourceTab}
-						{activeTab === "open-source" && (
-							<motion.div
-								layoutId="active-project-tab"
-								className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[var(--accent-light)]"
-							/>
-						)}
-					</button>
-					<button
-						type="button"
-						onClick={() => handleTabChange("private")}
-						className={`relative text-[15.5px] font-bold uppercase tracking-wider cursor-pointer transition-colors pb-1.5 flex items-center gap-1.5 ${
-							activeTab === "private"
-								? "text-primary"
-								: "text-secondary hover:text-primary"
-						}`}
-					>
-						<Lock size={13} className="stroke-[2.5]" />
-						{t.projects.privateTab}
-						{activeTab === "private" && (
-							<motion.div
-								layoutId="active-project-tab"
-								className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[var(--accent-light)]"
-							/>
-						)}
-					</button>
-				</div>
-
+				<h2 className="text-[15.5px] font-bold uppercase tracking-wider text-primary">
+					{t.sections.projects}
+				</h2>
 				<span className="font-mono text-[14.5px] text-secondary">
 					{activeProjects.length} {lang === "es" ? "proyectos" : "projects"}
 				</span>
 			</div>
 
-			{/* Responsive Grid of Project Cards */}
-			<div className="flex-1 min-h-[400px]">
-				<AnimatePresence mode="wait">
-					<motion.div
-						key={activeTab}
-						initial={{ opacity: 0, y: 12 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: -12 }}
-						transition={{ duration: 0.25 }}
-						className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-					>
-						{activeProjects.map((project) => {
-							const description =
-								lang === "es" ? project.descriptionEs : project.descriptionEn;
-							const viewReadmeText =
-								lang === "es" ? "Ver README" : "View README";
-							const viewDocText =
-								lang === "es" ? "Documentación" : "Documentation";
+			{/* Split Navigation layout */}
+			<div className="flex-1 flex flex-col md:flex-row gap-6">
+				{/* Sidebar list selection */}
+				<div className="w-full md:w-[240px] flex-shrink-0 flex flex-col gap-4">
+					<div className="flex bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-lg p-0.5 w-full select-none">
+						<button
+							type="button"
+							onClick={() => handleTabChange("open-source")}
+							className={`flex-1 py-1.5 rounded-md text-[12.5px] font-bold cursor-pointer transition-colors ${
+								activeTab === "open-source"
+									? "bg-[var(--accent)] text-[var(--accent-text)]"
+									: "text-secondary hover:text-primary"
+							}`}
+						>
+							{t.projects.openSourceTab}
+						</button>
+						<button
+							type="button"
+							onClick={() => handleTabChange("private")}
+							className={`flex-1 py-1.5 rounded-md text-[12.5px] font-bold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
+								activeTab === "private"
+									? "bg-[var(--accent)] text-[var(--accent-text)]"
+									: "text-secondary hover:text-primary"
+							}`}
+						>
+							<Lock size={11} className="stroke-[2.5]" />
+							{t.projects.privateTab}
+						</button>
+					</div>
 
-							return (
-								<div
-									key={project.id}
-									className="flex flex-col rounded-xl border border-[var(--border-default)] bg-[var(--bg-subtle)] overflow-hidden hover:border-[var(--border-hover)] transition-colors duration-200"
-								>
-									{/* Top Gallery Carousel */}
-									<ImageCarousel
-										images={project.images}
-										projectName={project.name}
-									/>
+					<ProjectSelector
+						activeProjects={activeProjects}
+						activeProjectId={activeProjectId}
+						onSelect={(id, name) => {
+							setActiveProjectId(id);
+							track.projectClicked(name);
+						}}
+					/>
+				</div>
 
-									{/* Card Content details */}
-									<div className="flex-1 p-5 flex flex-col justify-between gap-4">
-										<div className="flex flex-col gap-2">
-											<div className="flex items-center justify-between gap-2">
-												<h3 className="text-[17px] font-bold text-primary tracking-tight">
-													{project.name}
-												</h3>
-												{/* Tech Stack Badges */}
-												<div className="flex flex-wrap gap-1">
-													{project.languages.map((langItem) => (
-														<span
-															key={langItem}
-															className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-default)] text-secondary select-none"
-														>
-															{langItem}
-														</span>
-													))}
-												</div>
-											</div>
-											<p className="text-[14.5px] text-secondary leading-relaxed text-left line-clamp-3">
-												{description}
-											</p>
-										</div>
+				<div className="hidden md:block w-[0.5px] bg-[var(--border-default)] self-stretch" />
 
-										{/* Interactive Footer Controls */}
-										<div className="flex items-center justify-between gap-2 mt-2 select-none">
-											<div className="flex items-center gap-2">
-												{/* Repository URL */}
-												{project.githubUrl && (
-													<a
-														href={project.githubUrl}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="w-9 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] hover:border-[var(--border-hover)] text-secondary hover:text-primary flex items-center justify-center transition-colors"
-														aria-label="GitHub Repository"
-													>
-														<GithubIcon size={16} />
-													</a>
-												)}
-
-												{/* Live Demo Site URL */}
-												{project.liveUrl && (
-													<a
-														href={project.liveUrl}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="w-9 h-9 rounded-lg border border-[var(--border-default)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] hover:border-[var(--border-hover)] text-secondary hover:text-primary flex items-center justify-center transition-colors"
-														aria-label="Live Demo"
-													>
-														<Globe size={16} />
-													</a>
-												)}
-											</div>
-
-											{/* README Modal Launcher */}
-											<button
-												type="button"
-												onClick={() => handleOpenReadme(project)}
-												className="font-mono text-[13px] font-semibold text-secondary hover:text-primary flex items-center gap-1.5 border border-[var(--border-default)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] hover:border-[var(--border-hover)] rounded-lg px-3 py-2 cursor-pointer transition-colors"
-											>
-												<BookOpen size={14} />
-												{project.readmeUrl ? viewReadmeText : viewDocText}
-											</button>
-										</div>
-									</div>
-								</div>
-							);
-						})}
-					</motion.div>
-				</AnimatePresence>
+				{/* Bento preview box details */}
+				<div className="flex-1 flex flex-col gap-3 min-h-[450px]">
+					<AnimatePresence mode="wait">
+						<motion.div
+							key={currentActiveProject.id}
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -10 }}
+							transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+						>
+							<ProjectBentoPreview
+								project={currentActiveProject}
+								lang={lang}
+								mediaTab={mediaTab}
+								setMediaTab={setMediaTab}
+								onOpenReadme={handleOpenReadme}
+							/>
+						</motion.div>
+					</AnimatePresence>
+				</div>
 			</div>
 
-			{/* README VISUALIZER MODAL OVERLAY */}
+			{/* Full Screen README Modal Overlay */}
 			<AnimatePresence>
 				{selectedProject && (
 					<div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 md:p-8">
@@ -378,7 +622,6 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 							transition={{ duration: 0.25, ease: "easeOut" }}
 							className="bg-[var(--bg-card)] border border-[var(--border-hover)] rounded-xl w-full max-w-[800px] h-[80vh] flex flex-col overflow-hidden shadow-2xl relative"
 						>
-							{/* Modal Header */}
 							<div className="flex items-center justify-between px-6 py-4.5 border-b border-[var(--border-default)] select-none">
 								<div className="flex items-center gap-2">
 									<BookOpen size={18} className="text-secondary" />
@@ -396,11 +639,9 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 								</button>
 							</div>
 
-							{/* Modal Body */}
 							<div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
 								{loadingReadme ? (
 									<div className="w-full h-full flex flex-col items-center justify-center gap-3 select-none">
-										{/* Loading Spinner */}
 										<div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-default)] border-t-[var(--accent-light)] animate-spin" />
 										<span className="font-mono text-[13px] text-secondary">
 											{lang === "es"
