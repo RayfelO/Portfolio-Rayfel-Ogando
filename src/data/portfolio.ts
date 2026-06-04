@@ -117,21 +117,23 @@ export const projects: Project[] = [
 	},
 	{
 		id: "avaluo",
-		name: "AvaluoBackend",
+		name: "Avaluo",
 		descriptionEs:
-			"Sistema para la gestión y evaluación de criterios de acreditación educativa ABET.",
+			"🚀 Sistema Avalúo: plataforma diseñada para automatizar y organizar los procesos de acreditación ABET en las carreras de Ingeniería de Software, Ciberseguridad y Sistemas en INTEC, centralizando evidencias, métricas y reportes para auditorías y mejora continua.",
 		descriptionEn:
-			"System for the management and assessment of ABET educational accreditation criteria.",
-		languages: ["C#", ".NET Core", "EF Core"],
+			"🚀 Avaluo System: platform designed to automate and organize ABET accreditation processes for Software Engineering, Cybersecurity, and Systems majors at INTEC, centralizing evidence, metrics, and reports for audits and continuous improvement.",
+		languages: ["C#", "ASP.NET Web API", "Next.js"],
 		images: [],
 		githubUrl: "https://github.com/RayfelO/AvaluoBackend",
-		readmeUrl:
-			"https://raw.githubusercontent.com/RayfelO/AvaluoBackend/main/README.md",
 		youtubeUrl: "https://www.youtube.com/embed/CVELSReGrLg",
 		startDateEs: "ago. 2024",
 		startDateEn: "Aug 2024",
-		endDateEs: "oct. 2024",
-		endDateEn: "Oct 2024",
+		endDateEs: "abr. 2025",
+		endDateEn: "Apr 2025",
+		readmeContentEs:
+			"# Sistema Avalúo\n\nAsociado con Instituto Tecnológico de Santo Domingo\n\nPlataforma diseñada para automatizar y organizar los procesos de acreditación ABET en las carreras de Ingeniería de Software, Ciberseguridad y Sistemas en INTEC, centralizando evidencias, métricas y reportes para auditorías y mejora continua.\n\n### ✅ Qué hace\n- **Genera reportes clave**: desempeño de Student Outcomes (SO) por Performance Indicators (PI) (trimestral), egresados, empleadores, profesorado y PEO.\n- **Permite un flujo por roles**: coordinadores (asignan SO y planifican evaluaciones), profesores (evalúan con rúbrica digital y reciben notificaciones), supervisores (controlan entregas por SO), auxiliares (convierten programas a formato syllabux) y administradores (usuarios, permisos e integraciones).\n- **Ofrece dashboards personalizados** y registro de auditoría para trazabilidad de cambios en datos clave.\n\n### 🔌 Integraciones institucionales\n- Moodle (web service), Sistema Académico (API) y Microsoft Forms/Power Automate para encuestas y recolección automática de información.",
+		readmeContentEn:
+			"# Avaluo System\n\nAssociated with Instituto Tecnológico de Santo Domingo\n\nPlatform designed to automate and organize ABET accreditation processes for Software Engineering, Cybersecurity, and Systems majors at INTEC, centralizing evidence, metrics, and reports for audits and continuous improvement.\n\n### ✅ What it does\n- **Generates key reports**: Student Outcomes (SO) performance by Performance Indicators (PI) (termly), alumni, employers, faculty, and PEO.\n- **Enables role-based workflow**: coordinators (assign SO and plan assessments), professors (assess with digital rubrics and receive notifications), supervisors (track submissions per SO), assistants (convert curricula to syllabux format), and administrators (users, permissions, and integrations).\n- **Offers customized dashboards** and audit logs for traceability of changes in key data.\n\n### 🔌 Institutional integrations\n- Moodle (web service), Academic System (API), and Microsoft Forms/Power Automate for surveys and automated data collection.",
 	},
 	{
 		id: "apihotel",
@@ -152,21 +154,21 @@ export const projects: Project[] = [
 	},
 	{
 		id: "estudiantes",
-		name: "Estudiantes-React-Django",
+		name: "Estudiantes-main",
 		descriptionEs:
-			"Aplicación académica para la administración de estudiantes y reporte de calificaciones.",
+			"Sistema de Gestión Académica — Aplicación web para gestionar procesos académicos universitarios. Permite administrar estudiantes, asignaturas y calificaciones con operaciones CRUD, conversión de notas numéricas a letras (A–F) y generación de un ranking académico por índice. Facilita la interacción entre estudiantes, profesores y administradores con una interfaz clara y un flujo de información centralizado.",
 		descriptionEn:
-			"Academic application for student administration and grade reporting.",
-		languages: ["React", "Django", "CSS"],
+			"Academic Management System — Web application to manage university academic processes. It allows managing students, subjects, and grades with CRUD operations, converting numeric grades to letter grades (A–F), and generating an academic ranking by GPA. It facilitates interaction among students, professors, and administrators with a clear interface and a centralized information flow.",
+		languages: ["Python", "Django", "React.js", "Bootstrap"],
 		images: [],
 		githubUrl: "https://github.com/RayfelO/Estudiantes-React-Django",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/Estudiantes-React-Django/main/README.md",
 		youtubeUrl: "https://www.youtube.com/embed/5RSPmlTVYOA",
-		startDateEs: "feb. 2024",
-		startDateEn: "Feb 2024",
-		endDateEs: "abr. 2024",
-		endDateEn: "Apr 2024",
+		startDateEs: "mar. 2023",
+		startDateEn: "Mar 2023",
+		endDateEs: "abr. 2023",
+		endDateEn: "Apr 2023",
 	},
 	{
 		id: "calculator",
