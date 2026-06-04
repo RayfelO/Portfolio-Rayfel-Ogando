@@ -1,0 +1,335 @@
+/* Typography and Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500;600;700&display=swap");
+
+@import "tailwindcss";
+
+:root {
+	/* ─── DARK MODE (default) ─── */
+	--bg-base: #08090a; /* Fondo principal */
+	--bg-card: #0f1012; /* Cards */
+	--bg-card-hover: #141618; /* Card en hover */
+	--bg-subtle: #1a1c1f; /* Elementos secundarios */
+
+	--border-default: rgba(255, 255, 255, 0.06);
+	--border-hover: rgba(255, 255, 255, 0.12);
+	--border-accent: #283347; /* Borde con color acento sólido */
+
+	--text-primary: #f0f0f0;
+	--text-secondary: #8b8b8b;
+	--text-muted: #4a4a4a;
+
+	--accent: #283347; /* Color principal */
+	--accent-light: #3d4f6b; /* Variante más clara del acento */
+	--accent-text: #a8b8d0; /* Texto SOBRE fondo --accent */
+	--accent-dim: rgba(40, 51, 71, 0.35); /* Fondo con tinte azul */
+	--accent-glow: rgba(40, 51, 71, 0.18); /* Brillo sutil */
+
+	font-family:
+		"Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		Oxygen, Ubuntu, Cantarell, sans-serif;
+	color-scheme: dark light;
+}
+
+/* ─── LIGHT MODE ─── */
+:root[data-theme="light"] {
+	--bg-base: #fafafa;
+	--bg-card: #ffffff;
+	--bg-card-hover: #f5f5f5;
+	--bg-subtle: #f0f0f0;
+
+	--border-default: rgba(0, 0, 0, 0.07);
+	--border-hover: rgba(0, 0, 0, 0.14);
+	--border-accent: #283347;
+
+	--text-primary: #0a0a0a;
+	--text-secondary: #6b6b6b;
+	--text-muted: #b0b0b0;
+
+	--accent: #283347;
+	--accent-light: #3d4f6b;
+	--accent-text: #ffffff; /* Texto sobre --accent en light mode */
+	--accent-dim: rgba(40, 51, 71, 0.1);
+	--accent-glow: rgba(40, 51, 71, 0.05);
+
+	color-scheme: light dark;
+}
+
+body {
+	margin: 0;
+	background-color: var(--bg-base);
+	color: var(--text-primary);
+	transition:
+		background-color 0.2s,
+		color 0.2s,
+		border-color 0.2s;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Mono typography class */
+.font-mono {
+	font-family: "Geist Mono", "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* Bento Card Styles */
+.bento-card {
+	background: var(--bg-card);
+	border: 0.5px solid var(--border-default); /* CLAVE: 0.5px como Linear */
+	border-radius: 12px;
+	padding: 20px;
+	transition:
+		border-color 0.2s,
+		background 0.2s;
+	box-sizing: border-box;
+}
+
+.bento-card:hover {
+	border-color: var(--border-hover);
+	background: var(--bg-card-hover);
+}
+
+/* Card especial con acento — solo usar en HeroCard y ContactCard */
+.bento-card--accent {
+	border-color: var(--border-accent);
+	background: linear-gradient(
+		135deg,
+		var(--accent-glow) 0%,
+		var(--bg-card) 60%
+	);
+}
+
+/* Bento Grid Wrapper */
+.bento-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 8px; /* Gap pequeño — estilo Linear, no Notion */
+	width: 100%;
+	max-width: 1100px;
+	margin: 0 auto;
+}
+
+/* Custom Scrollbar (Estilo Linear) */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--border-default);
+	border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--border-hover);
+}
+
+/* 📨 ContactModal CSS Classes */
+
+/* Overlay */
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+/* Panel */
+.modal-panel {
+	background: var(--bg-card); /* #0f1012 en dark */
+	border: 0.5px solid var(--border-hover);
+	border-radius: 16px;
+	padding: 28px;
+	width: 100%;
+	max-width: 480px;
+	position: relative;
+	box-shadow:
+		0 20px 25px -5px rgba(0, 0, 0, 0.5),
+		0 10px 10px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* Título */
+.modal-title {
+	font-family: "Geist", sans-serif;
+	font-size: 26px;
+	font-weight: 600;
+	color: var(--text-primary);
+	margin-bottom: 8px;
+}
+
+/* Subtítulo */
+.modal-subtitle {
+	font-size: 13px;
+	color: var(--text-secondary);
+	line-height: 1.6;
+	margin-bottom: 24px;
+}
+
+/* Botón cerrar ✕ */
+.modal-close {
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	background: transparent;
+	border: none;
+	color: var(--text-muted);
+	font-size: 18px;
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	transition:
+		color 0.15s,
+		background 0.15s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.modal-close:hover {
+	color: var(--text-secondary);
+	background: var(--bg-subtle);
+}
+
+/* Radio Group — Motivo de contacto */
+.radio-option {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 0;
+	cursor: pointer;
+	font-size: 15px;
+	color: var(--text-primary);
+	font-weight: 500;
+	user-select: none;
+}
+
+/* Radio circle custom */
+.radio-circle {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 1.5px solid var(--border-hover);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition:
+		border-color 0.15s,
+		background-color 0.15s;
+}
+
+/* Seleccionado */
+.radio-circle--active {
+	border-color: var(--accent-light);
+	background: var(--accent);
+}
+
+.radio-circle--active::after {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--accent-text);
+}
+
+/* Campos de entrada */
+.modal-input,
+.modal-textarea {
+	width: 100%;
+	background: var(--bg-subtle);
+	border: 0.5px solid var(--border-default);
+	border-radius: 10px;
+	padding: 14px 16px;
+	font-family: "Geist", sans-serif;
+	font-size: 14px;
+	color: var(--text-primary);
+	outline: none;
+	transition: border-color 0.15s;
+	box-sizing: border-box;
+}
+
+.modal-input::placeholder,
+.modal-textarea::placeholder {
+	color: var(--text-muted);
+}
+
+.modal-input:focus,
+.modal-textarea:focus {
+	border-color: var(--border-accent); /* azul #283347 en focus */
+}
+
+.modal-textarea {
+	height: 120px;
+	resize: none;
+	line-height: 1.6;
+}
+
+/* Botón CTA */
+.modal-submit {
+	width: 100%;
+	background: #3b82f6; /* Azul brillante — el único lugar donde se usa */
+	color: #ffffff;
+	border: none;
+	border-radius: 10px;
+	padding: 16px;
+	font-family: "Geist", sans-serif;
+	font-size: 15px;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	transition:
+		background-color 0.15s,
+		opacity 0.15s;
+}
+
+.modal-submit:hover {
+	background-color: #2563eb;
+}
+
+.modal-submit:active {
+	opacity: 0.85;
+}
+
+.modal-submit:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* ─── Responsive Breakdown ─── */
+@media (max-width: 900px) {
+	.bento-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	[class*="col-span-3"] {
+		grid-column: span 2;
+	}
+	[class*="col-span-2"] {
+		grid-column: span 2;
+	}
+	[class*="col-span-1"] {
+		grid-column: span 1;
+	}
+}
+
+@media (max-width: 580px) {
+	.bento-grid {
+		grid-template-columns: 1fr;
+		gap: 6px;
+	}
+	[class*="col-span"] {
+		grid-column: span 1;
+	}
+	.modal-panel {
+		padding: 20px;
+	}
+	.modal-title {
+		font-size: 22px;
+	}
+}

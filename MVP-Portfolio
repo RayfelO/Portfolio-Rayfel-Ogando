@@ -1,0 +1,1347 @@
+# 🧩 Prompt: Portafolio — Rayfel Ogando
+## Estilo: Linear × Glassmorphism Caribe
+
+> Prompt de referencia visual: [linear.app/asks](https://linear.app/asks) + Bento Box grid.
+> Usa este prompt en Claude, Cursor, v0.dev o cualquier herramienta de generación de código.
+
+---
+
+## 🎯 Visión de Diseño
+
+Construye un portafolio Bento Box con la **estética exacta de Linear.app** — fondo casi negro, tipografía pequeña y precisa, bordes ultra finos de baja opacidad, cero decoración innecesaria — pero con **un único acento de color: azul #283347 `#283347`** que marca la identidad dominicana de Rayfel.
+
+**Referencias visuales obligatorias antes de escribir una línea de código:**
+- Fondo y densidad: [linear.app/asks](https://linear.app/asks)
+- Estructura de grid: [bentogrids.com/shots/cltcnu4uf0004yqu2vtodi8sl](https://bentogrids.com/shots/cltcnu4uf0004yqu2vtodi8sl)
+
+**Filosofía de diseño:**
+- Cada píxel debe justificar su existencia
+- El color azul #283347 aparece escaso — solo en elementos de máximo énfasis
+- Los cards no "flotan" sobre el fondo — están integrados en él
+- La tipografía hace el trabajo visual, no los efectos
+
+---
+
+## 🛠️ Stack Tecnológico
+
+| Tecnología | Rol exacto en el proyecto |
+|---|---|
+| **Bun** | Runtime y package manager. Inicializa con `bun create vite`, instala con `bun install`, corre con `bun dev` |
+| **React + TypeScript** | Framework principal. Componentes funcionales, hooks, tipado estricto sin `any` |
+| **Biome** | Linter + formatter (reemplaza ESLint + Prettier). Configura `biome.json` con reglas para TS y JSX |
+| **Fallow** | Análisis de inteligencia de codebase — complementa a Biome (Biome revisa archivos, Fallow analiza el proyecto completo). Escrito en Rust, sub-segundo. Úsalo para detectar exports no usados, componentes muertos, dependencias circulares y código duplicado. Instala con `bun add -d fallow`. Crea `.fallowrc.json` en la raíz. Agrega `"fallow": "bunx fallow audit"` a los scripts. Corre `bunx fallow --summary` antes de cada commit |
+| **Tailwind CSS v4** | Sistema de estilos completo. Grid, spacing, dark/light mode |
+| **Motion (motion.dev)** | Animaciones: staggered reveal de cards al cargar, hover lift en proyectos, fade en toggle de tema |
+| **Lucide React** | Iconos genéricos (MapPin, Star, GitFork, ExternalLink, Moon, Sun, Globe). NO usar Github/Linkedin — esos están eliminados en v1 |
+| **Zod** | Validar y tipar los datos del portafolio en `src/data/portfolio.ts` |
+| **Arcjet** | Protección de rate limiting si hay formulario de contacto |
+| **PostHog** | Analytics: trackear visitas, clics en proyectos y contacto |
+| **Vercel** | Deploy. Incluir `vercel.json` listo para `vercel deploy` |
+
+---
+
+## 🎨 Sistema de Diseño (Obligatorio — no improvisar)
+
+### Colores
+
+```css
+/* ─── DARK MODE (default) ─── */
+--bg-base:        #08090a;   /* Fondo principal */
+--bg-card:        #0f1012;   /* Cards */
+--bg-card-hover:  #141618;   /* Card en hover */
+--bg-subtle:      #1a1c1f;   /* Elementos secundarios */
+
+--border-default: rgba(255, 255, 255, 0.06);
+--border-hover:   rgba(255, 255, 255, 0.12);
+--border-accent:  #283347;              /* Borde con color acento sólido */
+
+--text-primary:   #f0f0f0;
+--text-secondary: #8b8b8b;
+--text-muted:     #4a4a4a;
+
+--accent:         #283347;              /* Color principal */
+--accent-light:   #3d4f6b;             /* Variante más clara del acento */
+--accent-text:    #a8b8d0;             /* Texto SOBRE fondo --accent */
+--accent-dim:     rgba(40, 51, 71, 0.35);  /* Fondo con tinte azul */
+--accent-glow:    rgba(40, 51, 71, 0.18);  /* Brillo sutil */
+
+/* ─── LIGHT MODE ─── */
+--bg-base:        #fafafa;
+--bg-card:        #ffffff;
+--bg-card-hover:  #f5f5f5;
+--bg-subtle:      #f0f0f0;
+
+--border-default: rgba(0, 0, 0, 0.07);
+--border-hover:   rgba(0, 0, 0, 0.14);
+--border-accent:  #283347;
+
+--text-primary:   #0a0a0a;
+--text-secondary: #6b6b6b;
+--text-muted:     #b0b0b0;
+
+--accent:         #283347;
+--accent-light:   #3d4f6b;
+--accent-text:    #ffffff;             /* Texto sobre --accent en light mode */
+--accent-dim:     rgba(40, 51, 71, 0.10);
+```
+
+> ⚠️ **Contraste importante:** `#283347` es un azul oscuro profundo. Cuando se use
+> como **fondo** (LocationCard, badges activos, status dot), el texto encima debe ser
+> `var(--accent-text)` (`#a8b8d0` en dark, `#ffffff` en light) — nunca blanco puro
+> ni el `--text-primary` genérico. Si se usa solo como **borde o acento de línea**,
+> no necesita texto encima.
+
+### Tipografía
+
+```css
+/* Display / Headings */
+font-family: 'Geist', system-ui, sans-serif;
+
+/* Código / Tech badges */
+font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+
+/* Escala — todo pequeño y preciso como Linear */
+--text-xs:   11px;   /* metadata, labels secundarios */
+--text-sm:   13px;   /* body, descripciones */
+--text-base: 15px;   /* títulos de cards */
+--text-lg:   20px;   /* hero subtitle */
+--text-xl:   32px;   /* nombre en hero */
+--text-2xl:  48px;   /* hero — solo el nombre */
+```
+
+### Cards
+
+```css
+.bento-card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border-default);  /* CLAVE: 0.5px como Linear */
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.bento-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Card especial con acento — solo usar en HeroCard y ContactCard */
+.bento-card--accent {
+  border-color: var(--border-accent);
+  background: linear-gradient(
+    135deg,
+    var(--accent-glow) 0%,
+    var(--bg-card) 60%
+  );
+}
+```
+
+### Grid
+
+```css
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;          /* Gap pequeño — estilo Linear, no Notion */
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Cada fila debe sumar exactamente 4 columnas */
+/* Tablet */
+@media (max-width: 900px) {
+  .bento-grid { grid-template-columns: repeat(2, 1fr); }
+  [class*="col-span"] { grid-column: span 2; }
+}
+
+/* Mobile */
+@media (max-width: 580px) {
+  .bento-grid { grid-template-columns: 1fr; gap: 6px; }
+  [class*="col-span"] { grid-column: span 1; }
+}
+```
+
+---
+
+## 🖼️ Avatar / Foto de Perfil
+
+Usa **únicamente** la foto real del perfil de GitHub. Sin fallbacks, sin iniciales, sin placeholders.
+
+```tsx
+// En HeroCard.tsx
+<img
+  src="https://avatars.githubusercontent.com/u/141379819?v=4"
+  alt="Rayfel Ogando"
+  loading="eager"
+  style={{
+    width: "56px",
+    height: "56px",
+    borderRadius: "50%",
+    border: "1.5px solid rgba(40, 51, 71, 0.8)",
+    display: "block",
+  }}
+/>
+```
+
+Reglas:
+- Shape: círculo `border-radius: 50%`
+- Tamaño: `56px × 56px`
+- Borde: `1.5px solid rgba(40, 51, 71, 0.8)` — el único detalle azul #283347 en el avatar
+- `loading="eager"` — carga inmediata, sin flash
+- Sin `onError` fallback — la URL de GitHub es estable y permanente
+
+---
+
+## ⚙️ Configuración de Fallow
+
+Fallow es la capa de inteligencia del codebase — detecta lo que Biome no puede ver (dead code entre archivos, dependencias circulares, duplicación entre módulos). Biome + Fallow juntos cubren todo.
+
+Crea este archivo en la raíz:
+
+```json
+// .fallowrc.json
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "**/*.generated.ts",
+    "dist/**",
+    "node_modules/**"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "unused-files": "error",
+    "unused-exports": "warn",
+    "circular-dependencies": "error",
+    "unused-dependencies": "warn"
+  },
+  "health": {
+    "maxCyclomatic": 15,
+    "maxCognitive": 12
+  }
+}
+```
+
+Scripts en `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev":             "bun run vite",
+    "build":           "bun run vite build",
+    "lint":            "biome lint ./src",
+    "format":          "biome format ./src --write",
+    "check":           "biome check ./src",
+    "fallow":          "bunx fallow audit",
+    "fallow:summary":  "bunx fallow --summary",
+    "fallow:health":   "bunx fallow health --score",
+    "quality":         "bun run check && bun run fallow"
+  }
+}
+```
+
+Flujo durante el desarrollo:
+1. `bun run quality` antes de cada commit — corre Biome + Fallow juntos
+2. Si Fallow reporta `unused-files` o `circular-dependencies` → corregir antes de continuar
+3. `bun run fallow:health` — objetivo de score: >85
+
+Agrega `.fallow/` al `.gitignore` (cache local de Fallow).
+
+---
+
+## 🏗️ Layout del Bento Grid
+
+Distribución exacta — cada fila suma 4 columnas sin excepción:
+
+```
+┌─────────────────────────────┬──────────┐
+│  HeroCard          (col-3)  │ Location │  ← fila 1: 3+1 = 4
+├──────────────┬──────────────┤  (col-1) │
+│ TechStack    │  GitHub      │          │
+│ (col-2)      │  Activity    ├──────────┤  ← fila 2: 2+2 = 4
+│              │  (col-2)     │          │
+├──────────────┴──────────────┼──────────┤
+│  OpenSource Projects        │ Contact  │  ← fila 3: 3+1 = 4
+│  (col-3)                    │ (col-1)  │
+├──────────────┬──────────────┴──────────┤
+│ Private      │  ModernStack   (col-2)  │  ← fila 4: 2+2 = 4
+│ Projects     │                         │
+│ (col-2)      │                         │
+└──────────────┴─────────────────────────┘
+```
+
+---
+
+## 📦 Especificación de Cada Card
+
+### `HeroCard` — col-span-3, accent card
+
+```
+Contenido:
+- Avatar: <img src="https://avatars.githubusercontent.com/u/141379819?v=4" />
+  Estilo: círculo 48px, border 1px solid var(--border-accent)
+
+- Nombre: "Rayfel Ogando"
+  Font: Geist, 40px, weight 500, color var(--text-primary)
+
+- Rol animado (Motion typewriter):
+  "Software Engineer · .NET & Angular"
+  Font: Geist Mono, 13px, color var(--accent)
+
+- Bio (2 líneas max):
+  "Building robust APIs with .NET Core and modern UIs with Angular & React.
+   Based in Dominican Republic 🇩🇴"
+  Font: 13px, color var(--text-secondary), line-height 1.6
+
+- Status badge (bottom-left):
+  ● Open to opportunities
+  Dot: 6px círculo, color #22c55e, animation: pulse
+  Text: 11px, Geist Mono, var(--text-secondary)
+```
+
+### `LocationCard` — col-span-1
+
+```
+Contenido centrado verticalmente:
+- Icono: Lucide <MapPin> 16px, color var(--accent)
+- "🇩🇴 Santo Domingo"  — 13px, var(--text-primary)
+- "Dominican Republic" — 11px, var(--text-muted)
+
+Altura: igual al HeroCard (stretch)
+Fondo: var(--accent-dim) — el único card con fondo de color sutil aparte del hero
+```
+
+### `TechStackCard` — col-span-2
+
+```
+Header: "Stack" — 11px uppercase tracking-wider var(--text-muted)
+
+Tres grupos con separación visual clara:
+
+Backend
+  C#  ·NET Core  ASP.NET  Node.js
+
+Frontend
+  Angular  React  TypeScript  JavaScript
+
+Databases
+  SQL Server  MongoDB  MySQL
+
+Estilo de badges:
+  background: var(--bg-subtle)
+  border: 0.5px solid var(--border-default)
+  border-radius: 4px  ← NO pill/redondo
+  font: Geist Mono, 11px
+  color: var(--text-secondary)
+  padding: 3px 8px
+
+En hover del badge: border-color → var(--border-accent), color → var(--accent)
+```
+
+### `GitHubActivityCard` — col-span-2
+
+```
+Header: "GitHub" — 11px uppercase var(--text-muted)
+
+Heatmap simulado:
+  - Grid de 52 cols × 7 filas (semanas × días)
+  - Celda: 10px × 10px, border-radius: 2px, gap: 2px
+  - Colores por intensidad:
+    0 contribuciones: var(--bg-subtle)
+    1-3:  rgba(40, 51, 71, 0.3)
+    4-6:  rgba(40, 51, 71, 0.3)
+    7+:   rgba(40, 51, 71, 0.3)
+  - Distribución: aleatoria pero con patrón realista (más actividad en días laborables)
+
+Stats row (debajo del heatmap):
+  ⭐ 16 stars  |  📦 6 repos  |  👥 8 followers
+  Font: Geist Mono, 11px, var(--text-secondary)
+  Separador: 0.5px vertical, var(--border-default)
+
+Achievements (fila final, tamaño micro):
+  Pair Extraordinaire · Pull Shark ×2 · YOLO · Quickdraw
+  Font: 10px, var(--text-muted)
+
+Link: "github.com/Rayfel2" con Lucide <ExternalLink> 10px
+```
+
+### `OpenSourceCard` — col-span-3
+
+```
+Header: "Open Source" — 11px uppercase var(--text-muted)
+Contador: "5 projects" — a la derecha, mismo estilo
+
+Lista de proyectos (NO cards anidadas — rows con separadores):
+
+┌─────────────────────────────────────────────────────┐
+│  EMMAX                              C# · Angular ⭐3 │
+│  Virtual store — product management + e-commerce    │
+├─────────────────────────────────────────────────────┤
+│  AvaluoBackend                    C# · EF Core ⭐1   │
+│  ABET certification management for education        │
+├─────────────────────────────────────────────────────┤
+│  ApiHotel                      C# · .NET REST ⭐1    │
+│  Hotel management REST API                          │
+├─────────────────────────────────────────────────────┤
+│  Estudiantes-React-Django        React · Django ⭐1  │
+│  Academic grades & students management app          │
+├─────────────────────────────────────────────────────┤
+│  BasicCalculator              Python · Tkinter ⭐1   │
+│  GUI calculator with Flask backend                  │
+└─────────────────────────────────────────────────────┘
+
+Cada row:
+  - Nombre: 13px, weight 500, var(--text-primary)
+  - Stack badges: Geist Mono 10px, var(--text-muted)
+  - Descripción: 12px, var(--text-secondary)
+  - Stars: Lucide <Star> 10px + número, var(--text-muted)
+  - Separador: 0.5px solid var(--border-default)
+  - Hover: fila completa background → var(--bg-card-hover), link icon aparece
+
+PostHog: en hover click → posthog.capture('project_clicked', { name })
+```
+
+### `ContactCard` — col-span-1
+
+```
+Tres elementos apilados verticalmente, full width:
+
+┌──────────────────────┐
+│  [SVG GitHub]        │
+│  GitHub              │
+│  github.com/Rayfel2  │
+└──────────────────────┘
+┌──────────────────────┐
+│  [SVG LinkedIn]      │
+│  LinkedIn            │
+│  in/rayfel-ogando    │
+└──────────────────────┘
+┌──────────────────────┐
+│  ✉ Enviar mensaje    │  ← abre el ContactModal
+└──────────────────────┘
+
+Botón links (GitHub / LinkedIn) styles:
+  background: var(--bg-subtle)
+  border: 0.5px solid var(--border-default)
+  border-radius: 8px
+  padding: 12px 16px
+  hover: border-color → var(--border-accent), icon color → var(--accent)
+  transition: 0.15s
+
+Botón "Enviar mensaje" styles:
+  background: var(--accent)          ← relleno sólido azul #283347
+  color: var(--accent-text)          ← texto #a8b8d0 (dark) / #fff (light)
+  border: none
+  border-radius: 8px
+  padding: 12px 16px
+  font: Geist Mono, 12px
+  hover: background → var(--accent-light)
+  transition: 0.15s
+  Icono: Lucide <Mail> 14px
+
+Iconos (SVG inline — Lucide eliminó Github/Linkedin en v1):
+  GitHub SVG: path "M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435..."
+  LinkedIn SVG: path "M20.447 20.452h-3.554v-5.569..."
+  Tamaño: 16px × 16px, currentColor
+
+PostHog:
+  GitHub/LinkedIn onClick → posthog.capture('contact_clicked', { platform })
+  "Enviar mensaje" onClick → posthog.capture('contact_modal_opened')
+```
+
+---
+
+## 📨 ContactModal — Formulario de Contacto
+
+### Descripción
+
+Modal que se abre al hacer clic en "Enviar mensaje" del ContactCard. Diseño basado en la referencia visual adjunta: fondo oscuro, radio group de motivo, campo email, textarea, botón CTA azul prominente.
+
+### Layout del modal
+
+```
+┌─────────────────────────────────────────────┐
+│                                           ✕ │
+│  Encantado de saber de ti                   │
+│  Por favor, selecciona el motivo de tu      │
+│  consulta, deja tu mensaje, y te            │
+│  responderé a la mayor brevedad.            │
+│                                             │
+│  ○  Oferta de trabajo                       │
+│  ○  Colaboración                            │
+│  ○  Otro                                    │
+│                                             │
+│  ┌───────────────────────────────────────┐  │
+│  │  Correo electrónico                   │  │
+│  └───────────────────────────────────────┘  │
+│                                             │
+│  ┌───────────────────────────────────────┐  │
+│  │  Mensaje                              │  │
+│  │                                       │  │
+│  │                                       │  │
+│  └───────────────────────────────────────┘  │
+│                                             │
+│  ┌───────────────────────────────────────┐  │
+│  │        Enviar mensaje  ➤              │  │
+│  └───────────────────────────────────────┘  │
+└─────────────────────────────────────────────┘
+```
+
+### Estilos del modal
+
+```css
+/* Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Panel */
+.modal-panel {
+  background: var(--bg-card);         /* #0f1012 en dark */
+  border: 0.5px solid var(--border-hover);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+}
+
+/* Título */
+.modal-title {
+  font: Geist, 26px, weight 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+/* Subtítulo */
+.modal-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Botón cerrar ✕ */
+.modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  hover: color → var(--text-secondary), background → var(--bg-subtle);
+}
+```
+
+### Radio Group — Motivo de contacto
+
+```css
+/* Cada opción */
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Radio circle custom */
+.radio-circle {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-hover);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Seleccionado */
+.radio-circle--active {
+  border-color: var(--accent);
+  background: var(--accent);
+  /* Dot interior blanco */
+}
+.radio-circle--active::after {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-text);
+}
+```
+
+Opciones:
+- `Oferta de trabajo`
+- `Colaboración`
+- `Otro`
+
+### Campos de entrada
+
+```css
+.modal-input, .modal-textarea {
+  width: 100%;
+  background: var(--bg-subtle);
+  border: 0.5px solid var(--border-default);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font: Geist, 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.modal-input::placeholder,
+.modal-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.modal-input:focus,
+.modal-textarea:focus {
+  border-color: var(--border-accent);   /* azul #283347 en focus */
+}
+
+.modal-textarea {
+  height: 120px;
+  resize: none;
+  line-height: 1.6;
+}
+```
+
+### Botón CTA
+
+```css
+.modal-submit {
+  width: 100%;
+  background: #3b82f6;      /* Azul brillante — el único lugar donde se usa */
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 16px;
+  font: Geist, 15px, weight 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+/* Ícono de envío — Lucide <Send> o SVG ➤ */
+.modal-submit:hover  { background: #2563eb; }
+.modal-submit:active { opacity: 0.85; }
+.modal-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+```
+
+> ⚠️ **Nota de color:** El botón CTA usa `#3b82f6` (azul brillante visible), NO el `--accent` `#283347` (que es muy oscuro para un botón full-width). Es el único uso de este azul en todo el portafolio.
+
+### Comportamiento y Validación
+
+```tsx
+// src/components/ContactModal.tsx
+
+interface ContactFormData {
+  reason: "Oferta de trabajo" | "Colaboración" | "Otro";
+  email: string;
+  message: string;
+}
+
+// Estados del formulario
+type FormState = "idle" | "loading" | "success" | "error";
+
+// Validación con Zod
+const ContactSchema = z.object({
+  reason: z.enum(["Oferta de trabajo", "Colaboración", "Otro"]),
+  email: z.string().email("Email inválido"),
+  message: z.string().min(10, "Mínimo 10 caracteres").max(500, "Máximo 500 caracteres"),
+});
+
+// Comportamiento:
+// 1. "reason" requerido — si no se selecciona, el botón queda deshabilitado
+// 2. Validación de email en blur (no en tiempo real)
+// 3. En submit: estado "loading" → spinner en el botón
+// 4. Success: animación de check + mensaje "¡Mensaje enviado!"
+// 5. Error: mensaje de error debajo del botón
+// 6. ESC cierra el modal
+// 7. Click fuera del panel cierra el modal
+// 8. Al abrir: focus en el primer radio option
+```
+
+### Animación de apertura/cierre (Motion)
+
+```tsx
+// Overlay
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.15 }}
+  className="modal-overlay"
+>
+  {/* Panel — entra desde abajo */}
+  <motion.div
+    initial={{ opacity: 0, y: 20, scale: 0.97 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: 20, scale: 0.97 }}
+    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+    className="modal-panel"
+  >
+    {/* contenido */}
+  </motion.div>
+</motion.div>
+```
+
+Usar `<AnimatePresence>` en App.tsx para que el exit animation funcione.
+
+### Rate Limiting con Arcjet
+
+```typescript
+// src/lib/contact.ts
+import arcjet, { tokenBucket } from "@arcjet/bun";
+
+// Configuración: máximo 3 envíos por IP cada 10 minutos
+export const contactRateLimit = arcjet({
+  key: import.meta.env.VITE_ARCJET_KEY,
+  rules: [
+    tokenBucket({
+      mode: "LIVE",
+      refillRate: 3,
+      interval: "10m",
+      capacity: 3,
+    }),
+  ],
+});
+
+// Si Arcjet bloquea la solicitud → mostrar mensaje:
+// "Demasiados intentos. Inténtalo de nuevo en unos minutos."
+```
+
+> **Nota:** Arcjet en el frontend de Vite requiere un endpoint serverless (Vercel Function) para funcionar correctamente. Alternativa MVP: validar solo con Zod en el cliente y usar un servicio de email como **Resend** o **EmailJS** que ya incluye rate limiting.
+
+### Servicio de Email — Resend (alternativa a Arcjet directo)
+
+```typescript
+// api/contact.ts (Vercel Serverless Function)
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export default async function handler(req, res) {
+  const { reason, email, message } = req.body;
+
+  await resend.emails.send({
+    from: 'portfolio@rayfel.dev',
+    to: 'rayfel@email.com',
+    subject: `[Portfolio] ${reason} — ${email}`,
+    text: message,
+  });
+
+  res.json({ ok: true });
+}
+```
+
+### PostHog — Eventos del Modal
+
+```typescript
+track.contactModalOpened  = () => posthog.capture('contact_modal_opened');
+track.contactFormSubmitted = (reason: string) =>
+  posthog.capture('contact_form_submitted', { reason });
+track.contactFormError    = (field: string) =>
+  posthog.capture('contact_form_error', { field });
+```
+
+### i18n — Traducciones del Modal
+
+Agregar al schema de `translations.ts`:
+
+```typescript
+contactModal: z.object({
+  title: z.string(),
+  subtitle: z.string(),
+  reasons: z.array(z.string()),  // 3 opciones
+  emailPlaceholder: z.string(),
+  messagePlaceholder: z.string(),
+  submitButton: z.string(),
+  successMessage: z.string(),
+  errorMessage: z.string(),
+})
+
+// EN
+contactModal: {
+  title: "Nice to meet you",
+  subtitle: "Please select the reason for your inquiry, leave your message, and I'll get back to you as soon as possible.",
+  reasons: ["Job offer", "Collaboration", "Other"],
+  emailPlaceholder: "Email address",
+  messagePlaceholder: "Message",
+  submitButton: "Send message",
+  successMessage: "Message sent! I'll get back to you soon.",
+  errorMessage: "Something went wrong. Please try again.",
+}
+
+// ES
+contactModal: {
+  title: "Encantado de saber de ti",
+  subtitle: "Por favor, selecciona el motivo de tu consulta, deja tu mensaje, y te responderé a la mayor brevedad.",
+  reasons: ["Oferta de trabajo", "Colaboración", "Otro"],
+  emailPlaceholder: "Correo electrónico",
+  messagePlaceholder: "Mensaje",
+  submitButton: "Enviar mensaje",
+  successMessage: "¡Mensaje enviado! Te responderé pronto.",
+  errorMessage: "Algo salió mal. Inténtalo de nuevo.",
+}
+```
+
+### Estructura de archivos nuevos
+
+```
+src/
+├── components/
+│   └── ContactModal.tsx    ← [NUEVO] Modal completo
+├── lib/
+│   └── contact.ts          ← [NUEVO] Lógica de envío + rate limit
+api/
+└── contact.ts             ← [NUEVO] Vercel Serverless Function (email)
+```
+
+### Checklist adicional (ContactModal)
+
+- [ ] Modal se abre desde el botón "Enviar mensaje" del ContactCard
+- [ ] ESC y click-fuera cierran el modal
+- [ ] Radio group funcional — 3 opciones
+- [ ] Validación de email (formato) y mensaje (min 10 chars)
+- [ ] Botón deshabilitado si no hay reason seleccionado
+- [ ] Estado loading durante el envío
+- [ ] Estado success con mensaje de confirmación
+- [ ] Estado error con mensaje descriptivo
+- [ ] Animación de apertura/cierre con Motion (scale + y + opacity)
+- [ ] i18n completo (ES/EN)
+- [ ] PostHog: 3 eventos (opened, submitted, error)
+- [ ] Responsive: modal ocupa 90% del ancho en mobile
+
+---
+
+### `PrivateProjectsCard` — col-span-2
+
+```
+Header: "Private Work" — 11px uppercase var(--text-muted)
+        + Lucide <Lock> 11px, var(--text-muted) — a la derecha
+
+3 items placeholder con diseño "redacted":
+  ┌─────────────────────────────────────┐
+  │ 🔒 Enterprise System                │
+  │    C# · SQL Server · Angular        │
+  │    ████████ in production           │
+  ├─────────────────────────────────────┤
+  │ 🔒 Internal Dashboard               │
+  │    React · .NET · MongoDB           │
+  │    ████████ active development      │
+  ├─────────────────────────────────────┤
+  │ 🔒 ████████████                     │
+  │    TypeScript · Node.js             │
+  │    ████████ under NDA               │
+  └─────────────────────────────────────┘
+
+Los "████████" son divs con:
+  background: var(--bg-subtle)
+  border-radius: 2px
+  height: 10px
+  width: variable (para simular texto redactado)
+
+Nota al fondo: "Available upon request · NDA protected"
+  Font: 11px, var(--text-muted), italic
+```
+
+### `ModernStackCard` — col-span-2
+
+```
+Header: "Built with" — 11px uppercase var(--text-muted)
+
+Grid 4×2 de tech pills con icono + nombre:
+
+  [Bun]      [Biome]    [Motion]   [Zod]
+  [Arcjet]   [PostHog]  [Vercel]   [React]
+
+Cada pill:
+  background: var(--bg-subtle)
+  border: 0.5px solid var(--border-default)
+  border-radius: 6px
+  padding: 6px 10px
+  font: Geist Mono, 11px, var(--text-secondary)
+  hover: var(--accent)
+
+Footer del card:
+  "This portfolio was built with these tools"
+  Font: 11px, var(--text-muted)
+```
+
+---
+
+## 🌍 i18n — Sistema de Idiomas
+
+```typescript
+// src/i18n/translations.ts
+import { z } from "zod";
+
+const TranslationSchema = z.object({
+  hero: z.object({
+    role: z.string(),
+    bio: z.string(),
+    status: z.string(),
+  }),
+  sections: z.object({
+    stack: z.string(),
+    github: z.string(),
+    openSource: z.string(),
+    privateWork: z.string(),
+    contact: z.string(),
+    builtWith: z.string(),
+  }),
+  projects: z.object({
+    viewOnGithub: z.string(),
+    availableOnRequest: z.string(),
+    underNDA: z.string(),
+  }),
+});
+
+export const translations = {
+  en: {
+    hero: {
+      role: "Software Engineer · .NET & Angular",
+      bio: "Building robust APIs with .NET Core and modern UIs with Angular & React. Based in Dominican Republic.",
+      status: "Open to opportunities",
+    },
+    sections: {
+      stack: "Stack",
+      github: "GitHub",
+      openSource: "Open Source",
+      privateWork: "Private Work",
+      contact: "Contact",
+      builtWith: "Built with",
+    },
+    projects: {
+      viewOnGithub: "View on GitHub",
+      availableOnRequest: "Available upon request",
+      underNDA: "NDA protected",
+    },
+  },
+  es: {
+    hero: {
+      role: "Ingeniero de Software · .NET & Angular",
+      bio: "Construyendo APIs robustas con .NET Core e interfaces modernas con Angular & React. Desde República Dominicana.",
+      status: "Abierto a oportunidades",
+    },
+    sections: {
+      stack: "Stack",
+      github: "GitHub",
+      openSource: "Open Source",
+      privateWork: "Proyectos Privados",
+      contact: "Contacto",
+      builtWith: "Construido con",
+    },
+    projects: {
+      viewOnGithub: "Ver en GitHub",
+      availableOnRequest: "Disponible bajo solicitud",
+      underNDA: "Bajo NDA",
+    },
+  },
+} satisfies Record<string, z.infer<typeof TranslationSchema>>;
+```
+
+Toggle de idioma: botón `ES / EN` en el header, top-right.
+Cambio con `posthog.capture('language_changed', { to: lang })`.
+
+---
+
+## 🌓 Dark / Light Mode
+
+```typescript
+// src/lib/theme.ts
+export type Theme = "dark" | "light";
+
+export const getInitialTheme = (): Theme => {
+  const stored = localStorage.getItem("theme") as Theme | null;
+  if (stored) return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
+
+export const applyTheme = (theme: Theme) => {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+};
+```
+
+- Toggle: Lucide `<Sun>` / `<Moon>` 14px en header top-right (al lado del ES/EN)
+- Default: dark mode
+- Transición: `transition: background-color 0.2s, color 0.2s, border-color 0.2s` en `:root`
+
+---
+
+## ✨ Animaciones con Motion
+
+```tsx
+// Entrada staggered de las cards — suave como Linear
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05, delayChildren: 0.1 }
+  }
+}
+
+const card = {
+  hidden: { opacity: 0, y: 12 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] }
+  }
+}
+
+// Hover en project rows
+const projectRow = {
+  rest: { x: 0 },
+  hover: { x: 2, transition: { duration: 0.15 } }
+}
+```
+
+**Reglas de animación:**
+- Nada que dure más de 400ms
+- Ease curve: `[0.16, 1, 0.3, 1]` (igual a Linear's spring)
+- Sin bounce, sin rotaciones, sin scale en cards grandes
+- Solo `y`, `opacity`, y `x` sutil en rows
+
+---
+
+## 📊 PostHog Analytics
+
+```typescript
+// src/lib/analytics.ts
+import posthog from "posthog-js";
+
+export const initAnalytics = () => {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY ?? "phc_placeholder", {
+    api_host: "https://app.posthog.com",
+    capture_pageview: true,
+    autocapture: false,
+  });
+};
+
+// Eventos a capturar:
+export const track = {
+  portfolioViewed: () => posthog.capture("portfolio_viewed"),
+  projectClicked:  (name: string) => posthog.capture("project_clicked", { name }),
+  contactClicked:  (platform: "github" | "linkedin") =>
+    posthog.capture("contact_clicked", { platform }),
+  languageChanged: (to: "en" | "es") => posthog.capture("language_changed", { to }),
+  themeChanged:    (to: "dark" | "light") => posthog.capture("theme_changed", { to }),
+};
+```
+
+---
+
+## 📁 Estructura de Archivos
+
+```
+rayfel-portfolio/
+├── src/
+│   ├── components/
+│   │   ├── cards/
+│   │   │   ├── HeroCard.tsx
+│   │   │   ├── TechStackCard.tsx
+│   │   │   ├── GitHubActivityCard.tsx
+│   │   │   ├── OpenSourceCard.tsx
+│   │   │   ├── PrivateProjectsCard.tsx
+│   │   │   ├── ContactCard.tsx
+│   │   │   ├── LocationCard.tsx
+│   │   │   └── ModernStackCard.tsx
+│   │   ├── layout/
+│   │   │   ├── BentoGrid.tsx      ← grid wrapper con Motion
+│   │   │   └── Header.tsx         ← ES/EN toggle + theme toggle
+│   │   └── icons/
+│   │       ├── GithubIcon.tsx     ← SVG inline (Lucide v1 eliminó brand icons)
+│   │       └── LinkedinIcon.tsx   ← SVG inline
+│   ├── data/
+│   │   └── portfolio.ts           ← datos validados con Zod
+│   ├── i18n/
+│   │   └── translations.ts
+│   ├── lib/
+│   │   ├── analytics.ts
+│   │   └── theme.ts
+│   ├── styles/
+│   │   └── globals.css            ← CSS variables dark/light + base styles
+│   └── App.tsx
+├── biome.json
+├── vercel.json
+├── tailwind.config.ts
+└── package.json
+```
+
+---
+
+## 📦 Setup Inicial
+
+```bash
+bun create vite rayfel-portfolio --template react-ts
+cd rayfel-portfolio
+
+bun add motion lucide-react zod posthog-js
+bun add @arcjet/react
+
+bun add -d @biomejs/biome tailwindcss @tailwindcss/vite fallow
+bunx biome init
+
+# Verificar que todo está limpio desde el inicio
+bunx fallow --summary
+```
+
+```json
+// package.json scripts
+{
+  "scripts": {
+    "dev":    "bun run vite",
+    "build":  "bun run vite build",
+    "lint":   "biome lint ./src",
+    "format": "biome format ./src --write",
+    "check":  "biome check ./src"
+  }
+}
+```
+
+```json
+// vercel.json
+{
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "installCommand": "bun install"
+}
+```
+
+---
+
+## ✅ Checklist de Calidad
+
+El output es aceptable solo si cumple **todo** esto:
+
+- [ ] Fondo `#08090a` — no azul navy, no gris, no negro puro `#000`
+- [ ] Bordes `0.5px` — ningún card tiene `border: 1px` o más
+- [ ] Color azul #283347 `#283347` aparece máximo en 3 lugares (rol, location card, hovers)
+- [ ] Tipografía: Geist para texto, Geist Mono para código/badges
+- [ ] Todas las filas del grid suman exactamente 4 columnas
+- [ ] Responsive: mobile (1 col), tablet (2 col), desktop (4 col)
+- [ ] Dark mode por default, toggle funcional con persistencia en localStorage
+- [ ] Toggle ES/EN funcional
+- [ ] Avatar real de GitHub `https://avatars.githubusercontent.com/u/141379819?v=4`
+- [ ] Proyectos reales con datos exactos (EMMAX ⭐3, ApiHotel ⭐1, etc.)
+- [ ] GithubIcon y LinkedinIcon como SVG inline (NO import de lucide-react)
+- [ ] Animaciones: stagger 50ms, duración max 350ms, ease `[0.16, 1, 0.3, 1]`
+- [ ] PostHog inicializado con todos los eventos de tracking
+- [ ] `vercel.json` presente
+- [ ] TypeScript estricto — cero `any`
+- [ ] `biome check ./src` pasa sin errores
+- [ ] `bunx fallow audit` pasa sin errores críticos
+- [ ] `.fallowrc.json` presente en la raíz
+- [ ] `.fallow/` en `.gitignore`
+
+---
+
+## ⚠️ Errores Comunes a Evitar
+
+| ❌ No hacer | ✅ Hacer en cambio |
+|---|---|
+| `import { Github, Linkedin } from "lucide-react"` | SVG inline en `src/icons/` |
+| Fondo azul navy `#0d1b2a` | Fondo casi negro `#08090a` |
+| Cards con `box-shadow` o `blur` | Solo `border: 0.5px` |
+| `border-radius: 20px` en cards | `border-radius: 12px` max |
+| Acento azul #283347 en todo | Solo en rol, location, y hovers |
+| `gap: 16px` o más en el grid | `gap: 8px` |
+| Animaciones con `spring` rebotante | Ease `[0.16, 1, 0.3, 1]` suave |
+| `auto-fill` o `auto-fit` en el grid | Columnas explícitas `repeat(4, 1fr)` |
+
+---
+
+*Prompt v2 — Rayfel Ogando · Linear × Glassmorphism Caribe · github.com/Rayfel2*
+
+---
+
+## 🖼️ Sección de Proyectos — Interacción Visual (Patrón Linear)
+
+Esta es la interacción más importante del portafolio. La `OpenSourceCard` tiene
+**dos zonas**: una lista de proyectos a la izquierda y un **preview visual a la derecha**
+que cambia al hacer clic en cada proyecto — igual a como Linear muestra
+sus mockups en el bento grid.
+
+### Layout interno del card
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Open Source                                    5 projects  │
+├───────────────────────┬─────────────────────────────────────┤
+│                       │                                     │
+│  ● EMMAX          ←   │   [Preview visual del proyecto      │
+│  ○ AvaluoBackend      │    seleccionado — ocupa todo        │
+│  ○ ApiHotel           │    el panel derecho]                │
+│  ○ Estudiantes        │                                     │
+│  ○ BasicCalculator    │                                     │
+│                       │                                     │
+└───────────────────────┴─────────────────────────────────────┘
+```
+
+- Panel izquierdo: ~35% del ancho — lista de proyectos clickeables
+- Panel derecho: ~65% del ancho — preview que cambia con animación
+
+### Comportamiento
+
+```tsx
+const [activeProject, setActiveProject] = useState(projects[0]);
+
+// Al hacer clic en un proyecto de la lista:
+// 1. El dot indicador se mueve al proyecto seleccionado
+// 2. El panel derecho hace crossfade con Motion hacia el nuevo contenido
+// 3. PostHog registra el clic
+```
+
+### Contenido del panel derecho por proyecto
+
+Cada proyecto tiene su propio `preview` con estos elementos:
+
+**EMMAX** (tienda virtual Angular + .NET)
+```
+Label:    "EMMAX · Tienda Virtual"
+Acento:   azul #283347 #283347
+Visual:   Mockup de UI — tabla de productos con columnas:
+          ID | Nombre | Precio | Stock | Acciones
+          Simular 3-4 filas de datos ficticios con badges de estado
+Badge:    "C# · Angular · SQL Server"
+Link:     github.com/Rayfel2/EMMAX-Angular-.Net-SQLServer
+```
+
+**AvaluoBackend** (gestión ABET educativo)
+```
+Label:    "AvaluoBackend · Certificación ABET"
+Acento:   azul #283347 #283347
+Visual:   Mockup de API response — bloque de código JSON:
+          {
+            "curso": "Ingeniería de Software",
+            "criterio": "ABET-3a",
+            "nivel": "Satisfactorio",
+            "score": 87.5
+          }
+          Estilo: fondo más oscuro que el card, font monospace, syntax highlight mínimo
+Badge:    "C# · .NET · Entity Framework"
+```
+
+**ApiHotel** (REST API hotelera)
+```
+Label:    "ApiHotel · REST API"
+Acento:   azul #283347 #283347
+Visual:   Mockup de endpoints — lista de rutas estilo Postman/Linear:
+          GET    /api/habitaciones       200 OK
+          POST   /api/reservaciones      201 Created
+          PUT    /api/usuarios/:id       200 OK
+          DELETE /api/servicios/:id      204 No Content
+          Colores: GET azul, POST verde, PUT amarillo, DELETE rojo — igual que Postman
+Badge:    "C# · ASP.NET · SQL Server"
+```
+
+**Estudiantes-React-Django**
+```
+Label:    "Estudiantes · App Académica"
+Acento:   azul #283347 #283347
+Visual:   Mockup de tabla de calificaciones:
+          Estudiante    | Asignatura        | Nota | Estado
+          Ana García    | Cálculo I         | 89   | ✓ Aprobado
+          Luis Martínez | Física General    | 72   | ✓ Aprobado
+          María Pérez   | Programación II   | 55   | ✗ Reprobado
+Badge:    "React · Django · CSS"
+```
+
+**BasicCalculator**
+```
+Label:    "BasicCalculator · Python GUI"
+Acento:   azul #283347 #283347
+Visual:   Mockup de la calculadora Tkinter — interfaz de botones:
+          Display: [ 248 + 16 = 264        ]
+          [ 7 ] [ 8 ] [ 9 ] [ ÷ ]
+          [ 4 ] [ 5 ] [ 6 ] [ × ]
+          [ 1 ] [ 2 ] [ 3 ] [ - ]
+          [ 0 ] [ . ] [ = ] [ + ]
+          Estilo flat, fondo oscuro, botón = con acento azul #283347
+Badge:    "Python · Flask · Tkinter"
+```
+
+### Animación del cambio de preview
+
+```tsx
+// Motion: crossfade suave entre previews
+<AnimatePresence mode="wait">
+  <motion.div
+    key={activeProject.id}
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -8 }}
+    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+  >
+    <ProjectPreview project={activeProject} />
+  </motion.div>
+</AnimatePresence>
+```
+
+- Duración: 200ms — rápido, no dramático
+- `mode="wait"` — el exit termina antes de que entre el nuevo
+- El dot indicador de la lista se mueve con `layout` de Motion
+
+### Indicador activo en la lista
+
+```tsx
+// El proyecto activo tiene:
+// - Dot relleno azul #283347 (●) vs dot vacío (○) en los demás
+// - Texto color var(--text-primary) vs var(--text-secondary)
+// - Línea izquierda: border-left: 2px solid var(--accent)
+
+<motion.div
+  layoutId="active-indicator"   // Motion mueve el indicador suavemente
+  className="active-bar"
+  style={{ borderLeft: "2px solid #283347" }}
+/>
+```
+
+### Tracking PostHog
+
+```ts
+// Cada vez que se cambia de proyecto:
+posthog.capture('project_preview_viewed', {
+  project: activeProject.name,
+  index: activeProject.index,
+});
+```
+
+### Comportamiento en mobile
+
+En pantallas menores a 640px, el layout cambia:
+- La lista va arriba (scroll horizontal de pills)
+- El preview va abajo, altura fija de 200px
+- Sin panel dividido — se apilan verticalmente
+
+```
+┌────────────────────────────────┐
+│ EMMAX  Avaluo  ApiHotel  ...   │  ← pills scrollables
+├────────────────────────────────┤
+│                                │
+│   [Preview del proyecto]       │  ← altura fija 200px
+│                                │
+└────────────────────────────────┘
+```
