@@ -103,9 +103,16 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
 };
 
 // --- IMAGE CAROUSEL COMPONENT ---
-const ImageCarousel: React.FC<{ images: string[]; projectName: string }> = ({
+interface ImageCarouselProps {
+	images: string[];
+	projectName: string;
+	onImageClick: (index: number) => void;
+}
+
+const ImageCarousel: React.FC<ImageCarouselProps> = ({
 	images,
 	projectName,
+	onImageClick,
 }) => {
 	const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -125,11 +132,13 @@ const ImageCarousel: React.FC<{ images: string[]; projectName: string }> = ({
 
 	return (
 		<div className="relative w-full h-full group/carousel">
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: Click triggers fullscreen zoom modal */}
 			<img
 				src={images[currentIndex]}
 				alt={`${projectName} mockup screen ${currentIndex + 1}`}
-				className="w-full h-full object-cover select-none transition-transform duration-350"
+				className="w-full h-full object-cover select-none transition-transform duration-350 cursor-zoom-in"
 				loading="lazy"
+				onClick={() => onImageClick(currentIndex)}
 			/>
 			<div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
 
@@ -319,6 +328,7 @@ interface ProjectBentoPreviewProps {
 	mediaTab: "mockups" | "video";
 	setMediaTab: (tab: "mockups" | "video") => void;
 	onOpenReadme: (project: Project) => void;
+	onImageClick: (images: string[], index: number) => void;
 }
 
 // fallow-ignore-next-line complexity
@@ -328,10 +338,14 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 	mediaTab,
 	setMediaTab,
 	onOpenReadme,
+	onImageClick,
 }) => {
 	const showGithub = !!project.githubUrl;
 	const showLive = !!project.liveUrl;
-	const showReadme = !!project.readmeUrl;
+	const showReadme =
+		!!project.readmeUrl ||
+		!!project.readmeContentEs ||
+		!!project.readmeContentEn;
 
 	const totalCards =
 		(showGithub ? 1 : 0) + (showLive ? 1 : 0) + (showReadme ? 1 : 0);
@@ -416,7 +430,11 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 						allowFullScreen
 					/>
 				) : (
-					<ImageCarousel images={project.images} projectName={project.name} />
+					<ImageCarousel
+						images={project.images}
+						projectName={project.name}
+						onImageClick={(index) => onImageClick(project.images, index)}
+					/>
 				)}
 			</div>
 
@@ -444,7 +462,15 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 							onClick={() => onOpenReadme(project)}
 							icon={<BookOpen size={18} />}
 							label="Markdown"
-							title={lang === "es" ? "Ver README" : "View README"}
+							title={
+								project.readmeUrl
+									? lang === "es"
+										? "Ver README"
+										: "View README"
+									: lang === "es"
+										? "Ver Documentación"
+										: "View Docs"
+							}
 						/>
 					)}
 				</div>
@@ -467,6 +493,27 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 	const [readmeText, setReadmeText] = useState<string>("");
 	const [loadingReadme, setLoadingReadme] = useState<boolean>(false);
+	const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+	const [lightboxIndex, setLightboxIndex] = useState<number>(-1);
+
+	// Keyboard handlers for lightbox
+	useEffect(() => {
+		if (lightboxIndex === -1) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setLightboxIndex(-1);
+			else if (e.key === "ArrowRight") {
+				setLightboxIndex((prev) =>
+					prev === lightboxImages.length - 1 ? 0 : prev + 1,
+				);
+			} else if (e.key === "ArrowLeft") {
+				setLightboxIndex((prev) =>
+					prev === 0 ? lightboxImages.length - 1 : prev - 1,
+				);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [lightboxIndex, lightboxImages]);
 
 	// Sync active ID when category changes
 	const handleTabChange = (tab: TabType) => {
@@ -592,6 +639,10 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 								mediaTab={mediaTab}
 								setMediaTab={setMediaTab}
 								onOpenReadme={handleOpenReadme}
+								onImageClick={(images, index) => {
+									setLightboxImages(images);
+									setLightboxIndex(index);
+								}}
 							/>
 						</motion.div>
 					</AnimatePresence>
@@ -640,6 +691,69 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 									<MarkdownRenderer content={readmeText} />
 								)}
 							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
+
+			{/* Image Lightbox Modal Overlay */}
+			<AnimatePresence>
+				{lightboxIndex !== -1 && (
+					// biome-ignore lint/a11y/useKeyWithClickEvents: Escape key handles keyboard dismissal
+					// biome-ignore lint/a11y/noStaticElementInteractions: Click on backdrop dismisses modal
+					<div
+						className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out select-none"
+						onClick={() => setLightboxIndex(-1)}
+					>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.95 }}
+							transition={{ duration: 0.2, ease: "easeOut" }}
+							className="relative max-w-full max-h-full flex items-center justify-center"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<img
+								src={lightboxImages[lightboxIndex]}
+								alt="Project mockup full size"
+								className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg border border-white/10 shadow-2xl"
+							/>
+							<button
+								type="button"
+								onClick={() => setLightboxIndex(-1)}
+								className="absolute -top-12 right-0 text-white/85 hover:text-white p-2 rounded-lg bg-black/40 hover:bg-black/65 transition-colors cursor-pointer"
+							>
+								<X size={20} />
+							</button>
+
+							{lightboxImages.length > 1 && (
+								<>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											setLightboxIndex((prev) =>
+												prev === 0 ? lightboxImages.length - 1 : prev - 1,
+											);
+										}}
+										className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 border border-white/10 hover:bg-black/80 flex items-center justify-center text-white cursor-pointer select-none transition-colors"
+									>
+										<ChevronLeft size={20} />
+									</button>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											setLightboxIndex((prev) =>
+												prev === lightboxImages.length - 1 ? 0 : prev + 1,
+											);
+										}}
+										className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 border border-white/10 hover:bg-black/80 flex items-center justify-center text-white cursor-pointer select-none transition-colors"
+									>
+										<ChevronRight size={20} />
+									</button>
+								</>
+							)}
 						</motion.div>
 					</div>
 				)}

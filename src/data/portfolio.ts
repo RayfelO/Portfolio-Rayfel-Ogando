@@ -2,6 +2,12 @@ import { z } from "zod";
 import codeMockup from "../assets/code_mockup.png";
 import dashboardMockup from "../assets/dashboard_mockup.png";
 import ecommerceMockup from "../assets/ecommerce_mockup.png";
+import tech4eDashboard from "../assets/Projects/4E-Dashboard.webp";
+import tech4eLanding from "../assets/Projects/4E-Landing.webp";
+import tech4eProductos from "../assets/Projects/4E-Productos.webp";
+import csCrudIngresos from "../assets/Projects/CS-Crud-de-ingresos.webp";
+import csDashboard from "../assets/Projects/CS-Dashboard.webp";
+import csLogin from "../assets/Projects/CS-Login.webp";
 
 // Zod schemas
 export const ProjectSchema = z.object({
@@ -261,59 +267,40 @@ export const techStack: TechGroup[] = [
 
 export const privateProjects: Project[] = [
 	{
-		id: "enterprise-system",
-		name: "Enterprise Corporate System",
+		id: "cs-asesorias",
+		name: "CS-ASESORIAS APP",
 		descriptionEs:
-			"Sistema de facturación corporativa y gestión de inventario para grandes operaciones comerciales.",
+			"Sistema de gestión financiera pensado para simplificar la administración de ingresos y egresos mensuales.",
 		descriptionEn:
-			"Corporate invoicing and inventory management system for large commercial operations.",
-		languages: ["C#", "SQL Server", "Angular"],
-		images: [ecommerceMockup, dashboardMockup, codeMockup],
-		liveUrl: "https://enterprise-demo.rayfel.dev",
-		readmeContentEs:
-			"# Sistema Corporativo Enterprise\n\nSistema integral diseñado para automatizar y optimizar las operaciones comerciales medianas y grandes, incluyendo facturación electrónica dominicana, gestión de almacenes en tiempo real y reportería financiera consolidada.\n\n### Tecnologías Utilizadas\n- **Backend:** C# con .NET Core, EF Core\n- **Frontend:** Angular, TailwindCSS\n- **Bases de Datos:** SQL Server\n\n### Características Clave\n- Módulo de facturación electrónica certificado por la DGII.\n- Control de stock multi-almacén con alertas de reabastecimiento automático.\n- Dashboard de KPIs financieros interactivo.",
-		readmeContentEn:
-			"# Enterprise Corporate System\n\nComprehensive system designed to automate and optimize mid to large-scale business operations, including Dominican electronic invoicing, real-time warehouse management, and consolidated financial reporting.\n\n### Technologies Used\n- **Backend:** C# with .NET Core, EF Core\n- **Frontend:** Angular, TailwindCSS\n- **Databases:** SQL Server\n\n### Key Features\n- Electronic invoicing module certified by DGII.\n- Multi-warehouse inventory control with auto-restock alerts.\n- Interactive financial KPIs dashboard.",
-		startDateEs: "ene. 2025",
-		startDateEn: "Jan 2025",
-	},
-	{
-		id: "internal-control",
-		name: "Internal Control Dashboard",
-		descriptionEs:
-			"Panel analítico para el monitoreo de indicadores de desempeño y auditorías de seguridad.",
-		descriptionEn:
-			"Analytical dashboard for monitoring performance indicators and security audits.",
-		languages: ["React", ".NET", "MongoDB"],
-		images: [dashboardMockup, codeMockup, ecommerceMockup],
-		liveUrl: "https://control-demo.rayfel.dev",
-		readmeContentEs:
-			"# Dashboard de Control Interno\n\nPlataforma de inteligencia de negocio para el monitoreo continuo de métricas operacionales, auditorías de seguridad de bases de datos y control de accesos corporativos.\n\n### Tecnologías Utilizadas\n- **Backend:** .NET Core REST API\n- **Frontend:** React, TailwindCSS, Recharts\n- **Bases de Datos:** MongoDB\n\n### Características Clave\n- Gráficos interactivos de rendimiento y tiempo de respuesta en tiempo real.\n- Auditoría automatizada de transacciones sospechosas y alertas de seguridad.\n- Panel de configuración de perfiles y permisos de usuario estructurado.",
-		readmeContentEn:
-			"# Internal Control Dashboard\n\nBusiness intelligence platform for continuous monitoring of operational metrics, database security audits, and corporate access control.\n\n### Technologies Used\n- **Backend:** .NET Core REST API\n- **Frontend:** React, TailwindCSS, Recharts\n- **Databases:** MongoDB\n\n### Key Features\n- Real-time interactive performance and response time charts.\n- Automated auditing of suspicious transactions and security alerts.\n- Structured user profile and permission configuration panel.",
-		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+			"Financial management system designed to simplify monthly income and expense management.",
+		languages: ["Angular", "Node.js", "MySQL"],
+		images: [csDashboard, csCrudIngresos, csLogin],
 		startDateEs: "oct. 2024",
 		startDateEn: "Oct 2024",
-		endDateEs: "dic. 2024",
-		endDateEn: "Dec 2024",
+		endDateEs: "mar. 2025",
+		endDateEn: "Mar 2025",
+		readmeContentEs:
+			"# CS-ASESORIAS APP\n\nYa se encuentra operativo el sistema de gestión financiera que desarrollamos en Angular, NodeJs (Express) y MySQL, pensado para simplificar la administración de ingresos y egresos mensuales.\n\n### Principales módulos:\n- **Registro y control de Ingresos**\n- **Gestión de Egresos y Sueldos**\n- **Seguimiento de Inversiones**\n- **Cálculo de Carga Financiera**\n- **Resumen Financiero mensual** con indicadores de estado: 🟢 Pagado / 🔴 No pagado",
+		readmeContentEn:
+			"# CS-ASESORIAS APP\n\nThe financial management system developed in Angular, Node.js (Express), and MySQL is now operational, designed to simplify monthly income and expense management.\n\n### Key Modules:\n- **Income registration and control**\n- **Expense and Salary management**\n- **Investment tracking**\n- **Financial Load calculation**\n- **Monthly Financial Summary** with status indicators: 🟢 Paid / 🔴 Unpaid",
 	},
 	{
-		id: "nda-app",
-		name: "NDA Protected App",
+		id: "four-e-technologys",
+		name: "4E Tecnologys",
 		descriptionEs:
-			"Servicio backend de alto rendimiento para el procesamiento de transacciones financieras masivas.",
+			"Plataforma de e-commerce para productos tecnológicos (laptops, periféricos y más), diseñada para ofrecer una experiencia completa tanto para clientes como para administradores.",
 		descriptionEn:
-			"High-performance backend service for massive financial transaction processing.",
-		languages: ["TypeScript", "Node.js", "Oracle"],
-		images: [codeMockup, dashboardMockup, ecommerceMockup],
+			"E-commerce platform for technological products (laptops, peripherals, and more), designed to offer a complete experience for both clients and administrators.",
+		languages: ["React", "TypeScript", "Django", "Python", "MongoDB"],
+		images: [tech4eDashboard, tech4eLanding, tech4eProductos],
+		startDateEs: "abr. 2025",
+		startDateEn: "Apr 2025",
+		endDateEs: "ago. 2025",
+		endDateEn: "Aug 2025",
 		readmeContentEs:
-			"# Aplicación Protegida por NDA\n\nEste proyecto es una aplicación patentada desarrollada bajo un estricto acuerdo de no divulgación (NDA). Ofrece un motor de procesamiento de transacciones financieras de alta disponibilidad con colas de mensajería asíncronas y caching en memoria.\n\n### Tecnologías Utilizadas\n- **Backend:** Node.js, NestJS, TypeScript\n- **Bases de Datos:** Oracle Database\n- **Infraestructura:** Docker, Redis\n\n### Características Clave\n- Procesamiento asíncrono con colas de mensajes de alta velocidad.\n- Sistema de auditoría encriptado de extremo a extremo.\n- Optimización de consultas complejas PL/SQL para reportes transaccionales.",
+			"# 4E Tecnologys\n\nPlataforma de e-commerce para productos tecnológicos (laptops, periféricos y más), diseñada para ofrecer una experiencia completa tanto para clientes como para administradores.\n\n### Experiencia para usuarios\n- **Registro e inicio de sesión** (email/contraseña + Google)\n- **Recuperación de contraseña**, perfil e historial de pedidos\n- **Catálogo** con especificaciones técnicas y filtros por categoría/marca\n- **Carrito y checkout** con múltiples métodos de pago (tarjeta, efectivo, transferencia)\n- **Confirmación por correo** y número de seguimiento\n- **Reseñas, calificaciones, cupones y ofertas**\n\n### Panel de administración\n- **CRUD de productos** + gestión de inventario con alertas de stock\n- **Gestión de pedidos** por estado\n- **Usuarios y roles personalizados** + logs de actividad\n- **Reportes de ventas** y ranking de productos",
 		readmeContentEn:
-			"# NDA Protected App\n\nThis project is a proprietary application developed under a strict Non-Disclosure Agreement (NDA). It delivers a high-availability financial transaction processing engine with asynchronous message queuing and in-memory caching.\n\n### Technologies Used\n- **Backend:** Node.js, NestJS, TypeScript\n- **Databases:** Oracle Database\n- **Infrastructure:** Docker, Redis\n\n### Key Features\n- Asynchronous processing with high-velocity message queues.\n- End-to-end encrypted auditing system.\n- Optimization of complex PL/SQL queries for transactional reporting.",
-		startDateEs: "sep. 2024",
-		startDateEn: "Sep 2024",
-		endDateEs: "nov. 2024",
-		endDateEn: "Nov 2024",
+			"# 4E Tecnologys\n\nE-commerce platform for technological products (laptops, peripherals, and more), designed to offer a complete experience for both clients and administrators.\n\n### User Experience\n- **Registration and login** (email/password + Google)\n- **Password recovery**, profile, and order history\n- **Catalog** with technical specifications and filters by category/brand\n- **Cart and checkout** with multiple payment methods (card, cash, transfer)\n- **Email confirmation** and tracking number\n- **Reviews, ratings, coupons, and offers**\n\n### Admin Dashboard\n- **Product CRUD** + inventory management with stock alerts\n- **Order management** by status\n- **Custom users and roles** + activity logs\n- **Sales reports** and product rankings",
 	},
 ];
 
