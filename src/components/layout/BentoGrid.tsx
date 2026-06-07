@@ -41,3 +41,16 @@ export const cardVariants = {
 		},
 	},
 };
+
+// Shared card hover animations
+export const cardHoverProps = {
+	whileHover: {
+		y: -4,
+		scale: 1.008,
+	},
+	transition: {
+		type: "spring" as const,
+		stiffness: 350,
+		damping: 25,
+	},
+};

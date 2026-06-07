@@ -2,7 +2,7 @@ import { type Easing, motion } from "motion/react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { Translations } from "../../i18n/translations";
-import { cardVariants } from "../layout/BentoGrid";
+import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
 
 interface HeroCardProps {
 	t: Translations;
@@ -43,13 +43,13 @@ export const HeroCard: React.FC<HeroCardProps> = ({ t }) => {
 	return (
 		<motion.div
 			variants={cardVariants}
-			className="bento-card bento-card--accent col-span-2 flex flex-col justify-between items-start gap-4"
-			style={{ minHeight: "220px" }}
+			{...cardHoverProps}
+			className="bento-card bento-card--accent bento-col-2 flex flex-col justify-between items-start gap-4"
 		>
 			<div className="flex flex-col gap-4 w-full">
 				{/* Top: Name and Role */}
 				<div>
-					<h1 className="text-[36px] sm:text-[42px] font-semibold text-primary tracking-tight leading-none">
+					<h1 className="text-[26px] min-[480px]:text-[30px] sm:text-[36px] md:text-[40px] lg:text-[42px] font-semibold text-primary tracking-tight leading-none">
 						Rayfel Ogando
 					</h1>
 					<p className="font-mono text-[16px] font-semibold text-secondary mt-2 min-h-[20px]">
@@ -67,21 +67,25 @@ export const HeroCard: React.FC<HeroCardProps> = ({ t }) => {
 				</div>
 
 				{/* Bio */}
-				<p className="text-[16px] text-secondary leading-relaxed max-w-[550px] font-normal">
+				<p className="text-[15px] sm:text-[16px] text-secondary leading-relaxed font-normal">
 					{t.hero.bio}
 				</p>
 			</div>
 
 			{/* Bottom: Status Badge */}
-			<div className="flex items-center gap-2 mt-2 bg-[var(--bg-subtle)] border border-[var(--border-default)] px-3 py-1.5 rounded-full">
+			<motion.div
+				whileHover={{ scale: 1.03 }}
+				transition={{ type: "spring", stiffness: 450, damping: 20 }}
+				className="flex items-center gap-2 mt-2 bg-[var(--bg-subtle)] border border-[var(--border-default)] px-3 py-1.5 rounded-full cursor-pointer"
+			>
 				<span className="relative flex h-2.5 w-2.5">
-					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-					<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--status-green)] opacity-75" />
+					<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--status-green)]" />
 				</span>
 				<span className="font-mono text-[13px] font-medium text-secondary">
 					{t.hero.status}
 				</span>
-			</div>
+			</motion.div>
 		</motion.div>
 	);
 };

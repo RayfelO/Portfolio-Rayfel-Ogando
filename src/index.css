@@ -24,6 +24,42 @@
 	--accent-dim: rgba(40, 51, 71, 0.35); /* Fondo con tinte azul */
 	--accent-glow: rgba(40, 51, 71, 0.18); /* Brillo sutil */
 
+	--accent-brand: #2b4588; /* Azul de marca vibrante y elegante */
+	--accent-brand-glow: rgba(43, 69, 136, 0.25); /* Brillo de marca */
+
+	/* Status indicators */
+	--status-green: #34d399; /* Emerald green - suave y moderno */
+	--status-green-glow: rgba(52, 211, 153, 0.45);
+	--status-blue: #7c9be7; /* Periwinkle blue harmonized with brand blue hue */
+	--status-blue-glow: rgba(124, 155, 231, 0.45);
+
+	/* Brand blue card variables */
+	--border-brand-blue: rgba(43, 69, 136, 0.45);
+	--bg-brand-blue-gradient: linear-gradient(
+		135deg,
+		rgba(43, 69, 136, 0.28) 0%,
+		var(--bg-card) 90%
+	);
+
+	/* Avatar game tokens */
+	--game-overlay-start: rgba(43, 69, 136, 0.72);
+	--game-overlay-end: rgba(15, 16, 18, 0.94);
+	--game-surface: rgba(43, 69, 136, 0.12);
+	--game-surface-hover: rgba(43, 69, 136, 0.24);
+	--game-surface-filled: rgba(43, 69, 136, 0.2);
+	--game-surface-strong: rgba(43, 69, 136, 0.2);
+	--game-border: rgba(43, 69, 136, 0.45);
+	--game-icon-button-bg: rgba(43, 69, 136, 0.2);
+	--game-icon-button-fg: var(--status-blue);
+	--game-icon-button-hover: rgba(43, 69, 136, 0.32);
+	--game-text: #f0f0f0;
+	--game-text-muted: rgba(240, 240, 240, 0.78);
+	--game-backdrop: rgba(0, 0, 0, 0.26);
+	--game-result-surface: rgba(8, 9, 10, 0.88);
+	--game-result-shadow: 0 0 30px rgba(0, 0, 0, 0.35);
+	--game-photo-vignette-start: rgba(0, 0, 0, 0.85);
+	--game-photo-vignette-mid: rgba(0, 0, 0, 0.4);
+
 	font-family:
 		"Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
 		Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -51,6 +87,42 @@
 	--accent-dim: rgba(40, 51, 71, 0.1);
 	--accent-glow: rgba(40, 51, 71, 0.05);
 
+	--accent-brand: #2b4588;
+	--accent-brand-glow: rgba(43, 69, 136, 0.18);
+
+	/* Status indicators (light mode calibrated) */
+	--status-green: #059669; /* Emerald 600 - para visibilidad sobre blanco */
+	--status-green-glow: rgba(5, 150, 105, 0.35);
+	--status-blue: #385fb8; /* Medium slate blue para visibilidad */
+	--status-blue-glow: rgba(56, 95, 184, 0.35);
+
+	/* Brand blue card variables (light mode) */
+	--border-brand-blue: rgba(43, 69, 136, 0.22);
+	--bg-brand-blue-gradient: linear-gradient(
+		135deg,
+		rgba(43, 69, 136, 0.08) 0%,
+		var(--bg-card) 90%
+	);
+
+	/* Avatar game tokens (light mode) */
+	--game-overlay-start: rgba(255, 255, 255, 0.96);
+	--game-overlay-end: rgba(222, 232, 248, 0.9);
+	--game-surface: rgba(255, 255, 255, 0.82);
+	--game-surface-hover: rgba(227, 236, 251, 0.96);
+	--game-surface-filled: rgba(248, 250, 255, 0.94);
+	--game-surface-strong: rgba(43, 69, 136, 0.12);
+	--game-border: rgba(43, 69, 136, 0.22);
+	--game-icon-button-bg: rgba(255, 255, 255, 0.86);
+	--game-icon-button-fg: #ffffff;
+	--game-icon-button-hover: rgba(235, 241, 252, 1);
+	--game-text: #0a0a0a;
+	--game-text-muted: rgba(10, 10, 10, 0.72);
+	--game-backdrop: rgba(255, 255, 255, 0.22);
+	--game-result-surface: rgba(255, 255, 255, 0.9);
+	--game-result-shadow: 0 0 24px rgba(43, 69, 136, 0.14);
+	--game-photo-vignette-start: rgba(255, 255, 255, 0);
+	--game-photo-vignette-mid: rgba(43, 69, 136, 0.08);
+
 	color-scheme: light dark;
 }
 
@@ -64,6 +136,112 @@ body {
 		border-color 0.2s;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide native cursor on desktop where CustomCursor is active */
+@media (min-width: 768px) {
+	body,
+	a,
+	button,
+	input,
+	textarea,
+	select,
+	summary,
+	iframe,
+	[role="button"],
+	[role="link"],
+	[role="checkbox"],
+	[role="radio"],
+	[role="tab"],
+	[role="menuitem"],
+	[onclick],
+	.cursor-pointer,
+	.cursor-zoom-in,
+	.cursor-zoom-out {
+		cursor: none;
+	}
+}
+
+@media (min-width: 768px) {
+	body.glightbox-open,
+	body.glightbox-open .glightbox-container,
+	body.glightbox-open .glightbox-container *,
+	body.glightbox-open .gbtn,
+	body.glightbox-open .gslide,
+	body.glightbox-open .gslide-media,
+	body.glightbox-open .gslide-image img,
+	body.glightbox-open iframe,
+	body.glightbox-open video,
+	body.glightbox-open button {
+		cursor: auto;
+	}
+
+	body.glightbox-open .custom-cursor {
+		opacity: 0 !important;
+	}
+}
+
+.glightbox-container .gslide-description {
+	display: none;
+}
+
+.glightbox-container .goverlay {
+	background: rgba(0, 0, 0, 0.82);
+}
+
+.glightbox-container .gslide {
+	box-sizing: border-box;
+	padding: 72px 96px 48px;
+}
+
+.glightbox-container .gslide-inner-content,
+.glightbox-container .ginner-container,
+.glightbox-container .gslide-media,
+.glightbox-container .gslide-image {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.glightbox-container .gslide-media,
+.glightbox-clean .gslide-media,
+.glightbox-clean .gslide-image,
+.glightbox-clean .gslide-image img {
+	background: transparent;
+	box-shadow: none;
+}
+
+.glightbox-container .gslide-image img,
+.glightbox-clean .gslide-image img {
+	width: auto;
+	height: auto;
+	max-width: 100%;
+	max-height: 100%;
+	min-width: 0;
+	margin: auto;
+	object-fit: contain;
+	object-position: center;
+}
+
+.glightbox-container .gslide-video {
+	width: 100%;
+	max-width: min(100%, 1200px);
+	max-height: 100%;
+	margin: auto;
+}
+
+.glightbox-container .gslide-video .gvideo-wrapper {
+	width: 100%;
+	max-width: 100%;
+	margin: auto;
+}
+
+.glightbox-container .gslide-video iframe {
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	max-height: 100%;
 }
 
 /* Mono typography class */
@@ -93,9 +271,20 @@ body {
 	border-color: var(--border-accent);
 	background: linear-gradient(
 		135deg,
-		var(--accent-glow) 0%,
-		var(--bg-card) 60%
+		var(--accent-brand-glow) 0%,
+		var(--bg-card) 65%
 	);
+}
+
+/* Card grande con acento azul de marca — solo usar en ProjectsCard */
+.bento-card--brand-blue {
+	border-color: var(--border-brand-blue);
+	background: var(--bg-brand-blue-gradient);
+}
+
+.bento-card--brand-blue:hover {
+	border-color: rgba(43, 69, 136, 0.6);
+	background: var(--bg-brand-blue-gradient);
 }
 
 /* Bento Grid Wrapper */
@@ -109,6 +298,18 @@ body {
 }
 
 /* Custom Scrollbar (Estilo Linear) */
+.bento-col-1 {
+	grid-column: span 1;
+}
+
+.bento-col-2 {
+	grid-column: span 2;
+}
+
+.bento-col-4 {
+	grid-column: span 4;
+}
+
 ::-webkit-scrollbar {
 	width: 6px;
 	height: 6px;
@@ -147,6 +348,7 @@ body {
 	padding: 28px;
 	width: 100%;
 	max-width: 480px;
+	max-height: min(88dvh, 720px);
 	position: relative;
 	box-shadow:
 		0 20px 25px -5px rgba(0, 0, 0, 0.5),
@@ -195,47 +397,6 @@ body {
 	background: var(--bg-subtle);
 }
 
-/* Radio Group — Motivo de contacto */
-.radio-option {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 8px 0;
-	cursor: pointer;
-	font-size: 15px;
-	color: var(--text-primary);
-	font-weight: 500;
-	user-select: none;
-}
-
-/* Radio circle custom */
-.radio-circle {
-	width: 18px;
-	height: 18px;
-	border-radius: 50%;
-	border: 1.5px solid var(--border-hover);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition:
-		border-color 0.15s,
-		background-color 0.15s;
-}
-
-/* Seleccionado */
-.radio-circle--active {
-	border-color: var(--accent-light);
-	background: var(--accent);
-}
-
-.radio-circle--active::after {
-	content: "";
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: var(--accent-text);
-}
-
 /* Campos de entrada */
 .modal-input,
 .modal-textarea {
@@ -259,7 +420,8 @@ body {
 
 .modal-input:focus,
 .modal-textarea:focus {
-	border-color: var(--border-accent); /* azul #283347 en focus */
+	border-color: var(--accent-brand);
+	box-shadow: 0 0 0 2px var(--accent-brand-glow);
 }
 
 .modal-textarea {
@@ -271,7 +433,7 @@ body {
 /* Botón CTA */
 .modal-submit {
 	width: 100%;
-	background: #3b82f6; /* Azul brillante — el único lugar donde se usa */
+	background: var(--accent-brand);
 	color: #ffffff;
 	border: none;
 	border-radius: 10px;
@@ -290,7 +452,7 @@ body {
 }
 
 .modal-submit:hover {
-	background-color: #2563eb;
+	background-color: var(--accent-light);
 }
 
 .modal-submit:active {
@@ -306,14 +468,15 @@ body {
 @media (max-width: 900px) {
 	.bento-grid {
 		grid-template-columns: repeat(2, 1fr);
+		grid-auto-flow: row dense;
 	}
-	[class*="col-span-3"] {
+
+	.bento-col-4,
+	.bento-col-2 {
 		grid-column: span 2;
 	}
-	[class*="col-span-2"] {
-		grid-column: span 2;
-	}
-	[class*="col-span-1"] {
+
+	.bento-col-1 {
 		grid-column: span 1;
 	}
 }
@@ -323,13 +486,39 @@ body {
 		grid-template-columns: 1fr;
 		gap: 6px;
 	}
-	[class*="col-span"] {
+
+	.bento-col-4,
+	.bento-col-2,
+	.bento-col-1 {
 		grid-column: span 1;
 	}
 	.modal-panel {
 		padding: 20px;
+		max-height: 85dvh;
 	}
 	.modal-title {
 		font-size: 22px;
 	}
+}
+
+@media (max-width: 400px) {
+	.modal-panel {
+		padding: 16px;
+	}
+
+	.modal-title {
+		font-size: 20px;
+	}
+}
+
+@media (max-width: 360px) {
+	.bento-grid {
+		padding-left: 12px;
+		padding-right: 12px;
+	}
+}
+
+.certs-scroll-fade {
+	-webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
 }

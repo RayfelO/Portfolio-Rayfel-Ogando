@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import type React from "react";
 import { educations } from "../../data/portfolio";
 import type { Translations } from "../../i18n/translations";
-import { cardVariants } from "../layout/BentoGrid";
+import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
 
 interface EducationCardProps {
 	id?: string;
@@ -20,7 +20,8 @@ export const EducationCard: React.FC<EducationCardProps> = ({
 		<motion.div
 			id={id}
 			variants={cardVariants}
-			className="bento-card col-span-2 flex flex-col gap-4 justify-between"
+			{...cardHoverProps}
+			className="bento-card bento-col-2 flex flex-col gap-4 justify-between overflow-visible"
 		>
 			{/* Header */}
 			<div className="select-none flex justify-between items-center pb-2 border-b border-[var(--border-default)]">
@@ -31,7 +32,7 @@ export const EducationCard: React.FC<EducationCardProps> = ({
 			</div>
 
 			{/* Timeline Container */}
-			<div className="relative flex-1 pl-4 border-l border-[var(--border-default)] ml-2 flex flex-col gap-6">
+			<div className="relative flex-1 pl-4 border-l border-[var(--accent-brand)]/25 ml-2 flex flex-col gap-6 overflow-visible">
 				{educations.map((edu) => {
 					const degree = lang === "es" ? edu.degreeEs : edu.degreeEn;
 					const period = lang === "es" ? edu.periodEs : edu.periodEn;
@@ -48,11 +49,11 @@ export const EducationCard: React.FC<EducationCardProps> = ({
 							<span className="absolute -left-[23px] top-1.5 flex h-3.5 w-3.5 items-center justify-center">
 								{isCurrent ? (
 									<>
-										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-										<span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--status-blue)] opacity-75" />
+										<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--status-blue)] shadow-[0_0_6px_rgba(43,69,136,0.5)]" />
 									</>
 								) : (
-									<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--border-hover)]" />
+									<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--border-hover)] shadow-[0_0_4px_rgba(43,69,136,0.3)]" />
 								)}
 							</span>
 
@@ -65,17 +66,15 @@ export const EducationCard: React.FC<EducationCardProps> = ({
 									{degree}
 								</h3>
 
-								<div className="text-[13.5px] text-secondary font-medium">
+								<div className="text-[13.5px] text-secondary font-medium italic">
 									<span>{edu.institution}</span>
 								</div>
 							</div>
 
-							{/* Details List */}
-							<ul className="mt-2 text-[14.5px] text-secondary list-disc pl-4 space-y-1 leading-relaxed">
-								{details.map((detail) => (
-									<li key={detail}>{detail}</li>
-								))}
-							</ul>
+							{/* Details Paragraph */}
+							<p className="mt-2 text-[13px] text-secondary leading-relaxed">
+								{details}
+							</p>
 						</div>
 					);
 				})}

@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { ContactModal } from "./components/ContactModal";
+import { CustomCursor } from "./components/CustomCursor";
 import { AvatarCard } from "./components/cards/AvatarCard";
 import { CertificationsCard } from "./components/cards/CertificationsCard";
 import { ContactCard } from "./components/cards/ContactCard";
@@ -47,6 +48,7 @@ const App: React.FC = () => {
 
 	return (
 		<div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-200 flex flex-col justify-between">
+			<CustomCursor />
 			<div className="w-full">
 				{/* Navigation Header */}
 				<Header
@@ -61,9 +63,13 @@ const App: React.FC = () => {
 					{/* Bento Grid Layout */}
 					<BentoGrid>
 						{/* Row 1: Avatar (col-1), Hero (col-2) & Contact (col-1) */}
-						<AvatarCard id="inicio" />
+						<AvatarCard id="inicio" lang={lang} />
 						<HeroCard t={t} />
-						<ContactCard t={t} onOpenModal={() => setIsModalOpen(true)} />
+						<ContactCard
+							t={t}
+							lang={lang}
+							onOpenModal={() => setIsModalOpen(true)}
+						/>
 
 						{/* Row 2: TechStack (col-2) & Certifications (col-2) */}
 						<TechStackCard id="tecnologias" t={t} lang={lang} />

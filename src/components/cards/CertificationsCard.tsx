@@ -5,7 +5,7 @@ import { SiFortinet, SiMeta } from "react-icons/si";
 import { TbCertificate, TbChartBar, TbCode, TbSchool } from "react-icons/tb";
 import { certifications } from "../../data/portfolio";
 import type { Translations } from "../../i18n/translations";
-import { cardVariants } from "../layout/BentoGrid";
+import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
 
 interface CertificationsCardProps {
 	id?: string;
@@ -34,8 +34,8 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 		<motion.div
 			id={id}
 			variants={cardVariants}
-			className="bento-card col-span-2 flex flex-col gap-4 justify-between"
-			style={{ maxHeight: "360px" }}
+			{...cardHoverProps}
+			className="bento-card bento-col-2 flex flex-col gap-4 justify-between max-h-[440px] sm:max-h-[360px]"
 		>
 			{/* Header */}
 			<div className="select-none flex justify-between items-center pb-2 border-b border-[var(--border-default)]">
@@ -46,7 +46,7 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 			</div>
 
 			{/* List Container without scrollbar visual */}
-			<div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div className="certs-scroll-fade flex-1 overflow-y-auto pr-1 flex flex-col gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 				{certifications.map((cert) => {
 					const name = lang === "es" ? cert.nameEs : cert.nameEn;
 					const date = lang === "es" ? cert.dateEs : cert.dateEn;
@@ -64,7 +64,7 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 							{/* Right: Content details */}
 							<div className="flex-1 flex flex-col gap-0.5">
 								<div className="flex justify-between items-start gap-3">
-									<span className="text-[14.5px] font-semibold text-primary leading-snug group-hover/cert:text-[var(--accent-text)] group-hover/cert:translate-x-1 transition-all duration-150">
+									<span className="text-[14.5px] font-semibold text-primary leading-snug group-hover/cert:text-[var(--accent-text)] transition-all duration-150">
 										{name}
 									</span>
 									{cert.url && (
@@ -79,19 +79,6 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 									<span>
 										{cert.issuer} · {date}
 									</span>
-									{cert.credentialId ? (
-										<div className="flex items-center gap-1">
-											<span className="text-[11.5px] font-normal font-mono px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] border border-[var(--border-default)] text-secondary select-all">
-												ID: {cert.credentialId}
-											</span>
-										</div>
-									) : (
-										<span className="text-[11.5px] font-normal text-secondary italic">
-											{cert.id.includes("sas")
-												? t.certifications.noCredentialId
-												: ""}
-										</span>
-									)}
 								</div>
 							</div>
 						</>
@@ -99,7 +86,9 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 
 					if (cert.url) {
 						return (
-							<a
+							<motion.a
+								whileHover={{ x: 3 }}
+								transition={{ type: "spring", stiffness: 350, damping: 22 }}
 								key={cert.id}
 								href={cert.url}
 								target="_blank"
@@ -107,7 +96,7 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 								className="flex gap-3 pb-3.5 border-b border-[var(--border-default)] last:border-0 last:pb-0 group/cert cursor-pointer text-left w-full"
 							>
 								{content}
-							</a>
+							</motion.a>
 						);
 					}
 
