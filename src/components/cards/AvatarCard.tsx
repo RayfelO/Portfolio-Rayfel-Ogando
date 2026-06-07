@@ -186,6 +186,7 @@ export const AvatarCard: React.FC<AvatarCardProps> = ({ id, lang }) => {
 	const [hoveredAction, setHoveredAction] = useState<"reset" | "close" | null>(
 		null,
 	);
+	const [isAvatarLoaded, setIsAvatarLoaded] = useState(false);
 
 	const canInteract = isGameOpen && !result && !isBotThinking;
 	const statusCopy = useMemo(() => getStatusCopy(result, lang), [lang, result]);
@@ -278,13 +279,22 @@ export const AvatarCard: React.FC<AvatarCardProps> = ({ id, lang }) => {
 			>
 				<motion.img
 					src="https://avatars.githubusercontent.com/u/141379819?v=4"
-					alt="Rayfel Ogando"
+					alt=""
 					loading="eager"
+					onLoad={() => setIsAvatarLoaded(true)}
+					onError={() => setIsAvatarLoaded(true)}
 					className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover min-[900px]:object-center min-[581px]:max-[899px]:object-top max-[580px]:object-center"
-					style={{ scaleX: -1 }}
+					style={{ scaleX: -1, opacity: isAvatarLoaded ? 1 : 0 }}
 					whileHover={isGameOpen ? undefined : { scaleX: -1.05, scaleY: 1.05 }}
 					transition={{ type: "spring", stiffness: 300, damping: 25 }}
 				/>
+				{!isAvatarLoaded && (
+					<div className="absolute inset-0 z-[5] flex items-center justify-center bg-[var(--bg-card)]">
+						<span className="text-[13px] font-mono text-secondary">
+							{lang === "es" ? "Cargando..." : "Loading..."}
+						</span>
+					</div>
+				)}
 				<div
 					className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3"
 					style={{
