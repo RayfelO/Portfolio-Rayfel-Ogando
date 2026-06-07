@@ -2,8 +2,6 @@
 ## Estilo: Linear × Glassmorphism Caribe
 
 > Prompt de referencia visual: [linear.app/asks](https://linear.app/asks) + Bento Box grid.
-> Usa este prompt en Claude, Cursor, v0.dev o cualquier herramienta de generación de código.
-
 ---
 
 ## 🎯 Visión de Diseño
@@ -742,8 +740,8 @@ export default async function handler(req, res) {
   const { reason, email, message } = req.body;
 
   await resend.emails.send({
-    from: 'portfolio@rayfel.dev',
-    to: 'rayfel@email.com',
+    from: 'portfolio@rayfelo.dev',
+    to: 'rayfelogando@gmail.com',
     subject: `[Portfolio] ${reason} — ${email}`,
     text: message,
   });
