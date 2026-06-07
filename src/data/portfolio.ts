@@ -401,8 +401,8 @@ export const experiences: Experience[] = [
 		locationEn: "Dominican Republic · On-site",
 		roles: [
 			{
-				roleEs: "Ingeniero de software",
-				roleEn: "Software Engineer",
+				roleEs: "Director de Información (CIO)",
+				roleEn: "CIO (Chief Information Officer)",
 				periodEs: "ene. 2025 - actualidad",
 				periodEn: "Jan 2025 - Present",
 				detailsEs:
