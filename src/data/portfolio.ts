@@ -1,14 +1,21 @@
 import { z } from "zod";
-import codeMockup from "../assets/code_mockup.png";
-import dashboardMockup from "../assets/dashboard_mockup.png";
-import ecommerceMockup from "../assets/ecommerce_mockup.png";
 import tech4eDashboard from "../assets/Projects/4E-Dashboard.webp";
 import tech4eLanding from "../assets/Projects/4E-Landing.webp";
 import tech4eProductos from "../assets/Projects/4E-Productos.webp";
+import apiHotelImg from "../assets/Projects/APIHotel.webp";
+import avaluoBackend from "../assets/Projects/Avaluo-Backend.webp";
+import avaluoFrontend from "../assets/Projects/Avaluo-Frontend.webp";
+import avaluoInformePDF from "../assets/Projects/Avaluo-InformePDF.webp";
 import basicCalculatorImg from "../assets/Projects/BasicTkinterCalculator.webp";
 import csCrudIngresos from "../assets/Projects/CS-Crud-de-ingresos.webp";
 import csDashboard from "../assets/Projects/CS-Dashboard.webp";
 import csLogin from "../assets/Projects/CS-Login.webp";
+import emmaxCarrousel from "../assets/Projects/emmax-carrousel.webp";
+import emmaxCatalogo from "../assets/Projects/emmax-catalogo.webp";
+import estudianteAdmin from "../assets/Projects/estudiante-admin.webp";
+import estudianteEstudiante from "../assets/Projects/estudiante-estudiante.webp";
+import estudianteLanding from "../assets/Projects/estudiante-landing.webp";
+import estudianteProfesor from "../assets/Projects/estudiante-profesor.webp";
 
 // Zod schemas
 export const ProjectSchema = z.object({
@@ -53,7 +60,6 @@ export const CertificationSchema = z.object({
 	issuer: z.string(),
 	dateEs: z.string(),
 	dateEn: z.string(),
-	credentialId: z.string().optional(),
 	url: z.string().optional(),
 });
 
@@ -62,12 +68,10 @@ export type Certification = z.infer<typeof CertificationSchema>;
 export const RoleHistorySchema = z.object({
 	roleEs: z.string(),
 	roleEn: z.string(),
-	typeEs: z.string(),
-	typeEn: z.string(),
 	periodEs: z.string(),
 	periodEn: z.string(),
-	detailsEs: z.array(z.string()),
-	detailsEn: z.array(z.string()),
+	detailsEs: z.string(),
+	detailsEn: z.string(),
 	skills: z.array(z.string()),
 	current: z.boolean(),
 });
@@ -89,8 +93,8 @@ export const EducationSchema = z.object({
 	institution: z.string(),
 	periodEs: z.string(),
 	periodEn: z.string(),
-	detailsEs: z.array(z.string()),
-	detailsEn: z.array(z.string()),
+	detailsEs: z.string(),
+	detailsEn: z.string(),
 });
 
 export type Education = z.infer<typeof EducationSchema>;
@@ -105,13 +109,13 @@ export const projects: Project[] = [
 		descriptionEn:
 			"🚀 Avaluo System: platform designed to automate and organize ABET accreditation processes for Software Engineering, Cybersecurity, and Systems majors at INTEC, centralizing evidence, metrics, and reports for audits and continuous improvement.",
 		languages: ["C#", "ASP.NET Web API", "Next.js"],
-		images: [],
+		images: [avaluoFrontend, avaluoBackend, avaluoInformePDF],
 		githubUrl: "https://github.com/RayfelO/AvaluoBackend",
 		youtubeUrl: "https://www.youtube.com/embed/CVELSReGrLg",
-		startDateEs: "ago. 2024",
-		startDateEn: "Aug 2024",
-		endDateEs: "abr. 2025",
-		endDateEn: "Apr 2025",
+		startDateEs: "5 ago. 2024",
+		startDateEn: "Aug 5, 2024",
+		endDateEs: "18 abr. 2025",
+		endDateEn: "Apr 18, 2025",
 		readmeContentEs:
 			"# Sistema Avalúo\n\nAsociado con Instituto Tecnológico de Santo Domingo\n\nPlataforma diseñada para automatizar y organizar los procesos de acreditación ABET en las carreras de Ingeniería de Software, Ciberseguridad y Sistemas en INTEC, centralizando evidencias, métricas y reportes para auditorías y mejora continua.\n\n### ✅ Qué hace\n- **Genera reportes clave**: desempeño de Student Outcomes (SO) por Performance Indicators (PI) (trimestral), egresados, empleadores, profesorado y PEO.\n- **Permite un flujo por roles**: coordinadores (asignan SO y planifican evaluaciones), profesores (evalúan con rúbrica digital y reciben notificaciones), supervisores (controlan entregas por SO), auxiliares (convierten programas a formato syllabux) y administradores (usuarios, permisos e integraciones).\n- **Ofrece dashboards personalizados** y registro de auditoría para trazabilidad de cambios en datos clave.\n\n### 🔌 Integraciones institucionales\n- Moodle (web service), Sistema Académico (API) y Microsoft Forms/Power Automate para encuestas y recolección automática de información.",
 		readmeContentEn:
@@ -125,11 +129,10 @@ export const projects: Project[] = [
 		descriptionEn:
 			"Complete virtual store with e-commerce gateway and management dashboard.",
 		languages: ["C#", "Angular", "SQL Server"],
-		images: [ecommerceMockup, dashboardMockup, codeMockup],
+		images: [emmaxCatalogo, emmaxCarrousel],
 		githubUrl: "https://github.com/RayfelO/EMMAX-Angular-.Net-SQLServer",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/EMMAX-Angular-.Net-SQLServer/main/README.MD",
-		youtubeUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
 		startDateEs: "21 ago. 2023",
 		startDateEn: "Aug 21, 2023",
 		endDateEs: "19 oct. 2024",
@@ -145,9 +148,10 @@ export const projects: Project[] = [
 		languages: ["Python", "Flask", "Tkinter"],
 		images: [basicCalculatorImg],
 		liveUrl: "https://basictkintercalculator.vercel.app",
-		githubUrl: "https://github.com/RayfelO/BasicCalculator-Tkinter-Python",
+		githubUrl:
+			"https://github.com/RayfelO/BasicCalculator-Python-Flask-Tkinter",
 		readmeUrl:
-			"https://raw.githubusercontent.com/RayfelO/BasicCalculator-Tkinter-Python/main/README.md",
+			"https://raw.githubusercontent.com/RayfelO/BasicCalculator-Python-Flask-Tkinter/main/README.md",
 		startDateEs: "15 sep. 2024",
 		startDateEn: "Sep 15, 2024",
 		endDateEs: "13 oct. 2024",
@@ -161,14 +165,14 @@ export const projects: Project[] = [
 		descriptionEn:
 			"Robust REST API for hotel room management and reservations.",
 		languages: ["C#", "ASP.NET", "SQL Server"],
-		images: [codeMockup, dashboardMockup, ecommerceMockup],
-		githubUrl: "https://github.com/RayfelO/ApiHotel",
+		images: [apiHotelImg],
+		githubUrl: "https://github.com/RayfelO/ApiHotel-.Net-SQLServer",
 		readmeUrl:
-			"https://raw.githubusercontent.com/RayfelO/ApiHotel/main/README.md",
-		startDateEs: "10 mar. 2023",
-		startDateEn: "Mar 10, 2023",
-		endDateEs: "29 may. 2023",
-		endDateEn: "May 29, 2023",
+			"https://raw.githubusercontent.com/RayfelO/ApiHotel-.Net-SQLServer/main/README.md",
+		startDateEs: "3 may. 2023",
+		startDateEn: "May 3, 2023",
+		endDateEs: "20 jul. 2023",
+		endDateEn: "Jul 20, 2023",
 	},
 	{
 		id: "estudiantes",
@@ -178,15 +182,20 @@ export const projects: Project[] = [
 		descriptionEn:
 			"Academic Management System — Web application to manage university academic processes. It allows managing students, subjects, and grades with CRUD operations, converting numeric grades to letter grades (A–F), and generating an academic ranking by GPA. It facilitates interaction among students, professors, and administrators with a clear interface and a centralized information flow.",
 		languages: ["Python", "Django", "React.js", "Bootstrap"],
-		images: [],
+		images: [
+			estudianteLanding,
+			estudianteEstudiante,
+			estudianteProfesor,
+			estudianteAdmin,
+		],
 		githubUrl: "https://github.com/RayfelO/Estudiantes-React-Django",
 		readmeUrl:
 			"https://raw.githubusercontent.com/RayfelO/Estudiantes-React-Django/main/README.md",
 		youtubeUrl: "https://www.youtube.com/embed/5RSPmlTVYOA",
-		startDateEs: "mar. 2023",
-		startDateEn: "Mar 2023",
-		endDateEs: "abr. 2023",
-		endDateEn: "Apr 2023",
+		startDateEs: "10 mar. 2023",
+		startDateEn: "Mar 10, 2023",
+		endDateEs: "29 abr. 2023",
+		endDateEn: "Apr 29, 2023",
 	},
 ];
 
@@ -244,7 +253,7 @@ export const techStack: TechGroup[] = [
 		],
 	},
 	{
-		titleEs: "Bases de Datos",
+		titleEs: "Base de datos",
 		titleEn: "Databases",
 		items: [
 			{
@@ -295,9 +304,9 @@ export const privateProjects: Project[] = [
 		id: "cs-asesorias",
 		name: "CS-ASESORIAS APP",
 		descriptionEs:
-			"Sistema de gestión financiera pensado para simplificar la administración de ingresos y egresos mensuales.",
+			"Sistema de gestión financiera chileno pensado para simplificar la administración de ingresos y egresos mensuales.",
 		descriptionEn:
-			"Financial management system designed to simplify monthly income and expense management.",
+			"Chilean financial management system designed to simplify monthly income and expense management.",
 		languages: ["Angular", "Node.js", "MySQL"],
 		images: [csDashboard, csCrudIngresos, csLogin],
 		liveUrl: "https://app.csasesorias.cl/",
@@ -320,24 +329,22 @@ export const certifications: Certification[] = [
 		issuer: "Meta",
 		dateEs: "abr. 2025",
 		dateEn: "Apr 2025",
-		credentialId: "JSUTDPIX8VXC",
 		url: "https://www.coursera.org/verify/JSUTDPIX8VXC",
 	},
 	{
 		id: "sas-data-mining",
 		nameEs:
-			"SAS – Academic Specialization in Data Mining and Business Intelligence",
-		nameEn:
-			"SAS – Academic Specialization in Data Mining and Business Intelligence",
-		issuer: "SAS – Instituto Tecnológico de Santo Domingo",
+			"Especialización académica en minería de datos e inteligencia empresarial",
+		nameEn: "Academic Specialization in Data Mining and Business Intelligence",
+		issuer: "SAS",
 		dateEs: "ene. 2025",
 		dateEn: "Jan 2025",
 		url: "https://www.credly.com/badges/d72fdf14-ee76-4a5e-8ddf-04c2a9b89da5/linked_in_profile",
 	},
 	{
 		id: "fortinet-cybersecurity-fundamentals",
-		nameEs: "Fortinet Certified Fundamentals Cybersecurity",
-		nameEn: "Fortinet Certified Fundamentals Cybersecurity",
+		nameEs: "FCF - Fortinet Certified Fundamentals en Ciberseguridad",
+		nameEn: "FCF - Fortinet Certified Fundamentals Cybersecurity",
 		issuer: "Fortinet",
 		dateEs: "Expedición: dic. 2024 · Vencimiento: ene. 2027",
 		dateEn: "Issued: Dec 2024 · Expires: Jan 2027",
@@ -345,8 +352,8 @@ export const certifications: Certification[] = [
 	},
 	{
 		id: "fortinet-cybersecurity-associate",
-		nameEs: "Fortinet Certified Associate Cybersecurity",
-		nameEn: "Fortinet Certified Associate Cybersecurity",
+		nameEs: "FCA - Fortinet Certified Associate en Ciberseguridad",
+		nameEn: "FCA - Fortinet Certified Associate Cybersecurity",
 		issuer: "Fortinet",
 		dateEs: "Expedición: ene. 2025 · Vencimiento: ene. 2027",
 		dateEn: "Issued: Jan 2025 · Expires: Jan 2027",
@@ -359,7 +366,6 @@ export const certifications: Certification[] = [
 		issuer: "Next U",
 		dateEs: "sept. 2020",
 		dateEn: "Sep 2020",
-		credentialId: "23558248",
 	},
 	{
 		id: "virtual-study-nextu",
@@ -368,7 +374,6 @@ export const certifications: Certification[] = [
 		issuer: "Next U",
 		dateEs: "jul. 2020",
 		dateEn: "Jul 2020",
-		credentialId: "21059030",
 	},
 	{
 		id: "kpi-evaluator",
@@ -377,7 +382,6 @@ export const certifications: Certification[] = [
 		issuer: "Capacítate para el empleo",
 		dateEs: "abr. 2023",
 		dateEn: "Apr 2023",
-		credentialId: "c82fc6ee-3160-4b92-8238-442c44cccb66",
 	},
 	{
 		id: "process-improvement",
@@ -386,7 +390,6 @@ export const certifications: Certification[] = [
 		issuer: "Capacítate para el empleo",
 		dateEs: "ene. 2023",
 		dateEn: "Jan 2023",
-		credentialId: "99999d32-c8de-43d9-a8b1-697229123f4d",
 	},
 ];
 
@@ -400,64 +403,26 @@ export const experiences: Experience[] = [
 			{
 				roleEs: "Ingeniero de software",
 				roleEn: "Software Engineer",
-				typeEs: "Jornada completa",
-				typeEn: "Full-time",
 				periodEs: "ene. 2025 - actualidad",
 				periodEn: "Jan 2025 - Present",
-				detailsEs: [
-					"Desarrollo y soporte en sistemas de facturación electrónica y Oracle Database.",
-					"Liderazgo en la gestión de seguridad de datos y disponibilidad del sistema de facturación.",
-				],
-				detailsEn: [
-					"Development and support on electronic invoicing systems and Oracle Database.",
-					"Leadership in data security management and invoicing system availability.",
-				],
+				detailsEs:
+					"Desarrollo de aplicaciones empresariales y soluciones digitales para diferentes necesidades, incluyendo aplicaciones móviles, portales web, páginas corporativas, sistemas de tickets y herramientas de gestión de backups.",
+				detailsEn:
+					"Development of enterprise applications and digital solutions for various needs, including mobile apps, web portals, corporate websites, ticketing systems, and backup management tools.",
 				skills: ["Oracle Database", "Facturación Electrónica", "SQL", "PL/SQL"],
 				current: true,
 			},
 			{
 				roleEs: "Pasante programador",
 				roleEn: "Programming Intern",
-				typeEs: "Contrato de prácticas",
-				typeEn: "Internship contract",
 				periodEs: "ago. 2024 - ene. 2025",
 				periodEn: "Aug 2024 - Jan 2025",
-				detailsEs: [
-					"Apoyo en el desarrollo y optimización de consultas SQL y PL/SQL en Oracle Database.",
-					"Colaboración con el equipo de TI en tareas de mantenimiento del backend.",
-				],
-				detailsEn: [
-					"Support in development and optimization of SQL and PL/SQL queries in Oracle Database.",
-					"Collaboration with the IT team on backend maintenance tasks.",
-				],
+				detailsEs:
+					"Responsable del mantenimiento y mejora continua de una integración de facturación electrónica conectada al ERP Oracle de la empresa.",
+				detailsEn:
+					"Responsible for the maintenance and continuous improvement of an electronic invoicing integration connected to the company's Oracle ERP.",
 				skills: ["Oracle Database", "SQL", "PL/SQL"],
 				current: false,
-			},
-		],
-	},
-	{
-		id: "freelance-software-engineer",
-		company: "Profesional Independiente",
-		locationEs: "República Dominicana · En remoto",
-		locationEn: "Dominican Republic · Remote",
-		roles: [
-			{
-				roleEs: "Freelance Software Engineer",
-				roleEn: "Freelance Software Engineer",
-				typeEs: "Profesional independiente",
-				typeEn: "Freelance",
-				periodEs: "oct. 2024 - actualidad",
-				periodEn: "Oct 2024 - Present",
-				detailsEs: [
-					"Desarrollo de interfaces dinámicas y modulares utilizando Angular CLI y React.",
-					"Diseño e implementación de servicios backend con Node.js y APIs REST robustas.",
-				],
-				detailsEn: [
-					"Development of dynamic and modular interfaces using Angular CLI and React.",
-					"Design and implementation of backend services with Node.js and robust REST APIs.",
-				],
-				skills: ["Node.js", "Angular", "React", "TypeScript", "JavaScript"],
-				current: true,
 			},
 		],
 	},
@@ -466,19 +431,15 @@ export const experiences: Experience[] = [
 export const educations: Education[] = [
 	{
 		id: "intec-computer-science",
-		degreeEs: "Grado, Ciencias de la Computación (Ingeniería)",
-		degreeEn: "Bachelor of Science in Computer Science",
+		degreeEs: "Ingeniería de Software",
+		degreeEn: "Software Engineering",
 		institution: "Instituto Tecnológico de Santo Domingo (INTEC)",
 		periodEs: "nov. 2021 – abr. 2026",
 		periodEn: "Nov 2021 – Apr 2026",
-		detailsEs: [
-			"Enfoque en Ingeniería de Software, Estructuras de Datos, Algoritmos y Bases de Datos.",
-			"Especialización Académica en Minería de Datos y Business Intelligence en conjunto con SAS.",
-		],
-		detailsEn: [
-			"Focus on Software Engineering, Data Structures, Algorithms, and Databases.",
-			"Academic Specialization in Data Mining and Business Intelligence in collaboration with SAS.",
-		],
+		detailsEs:
+			"Formación en Ingeniería de Software enfocada en el análisis, diseño, desarrollo y mantenimiento de softwares, con bases en programación, estructuras de datos, algoritmos, bases de datos y arquitectura de software.",
+		detailsEn:
+			"Software Engineering training focused on the analysis, design, development, and maintenance of software, with foundations in programming, data structures, algorithms, databases, and software architecture.",
 	},
 	{
 		id: "copphu-it",
@@ -487,11 +448,9 @@ export const educations: Education[] = [
 		institution: "Colegio Preuniversitario Pedro Henríquez Ureña (COPPHU)",
 		periodEs: "ago. 2016 – jul. 2021",
 		periodEn: "Aug 2016 – Jul 2021",
-		detailsEs: [
+		detailsEs:
 			"Formación técnica especializada en desarrollo de software, C# y desarrollo web básico.",
-		],
-		detailsEn: [
+		detailsEn:
 			"Specialized technical training in software development, C#, and basic web development.",
-		],
 	},
 ];

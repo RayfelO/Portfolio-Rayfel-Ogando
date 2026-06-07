@@ -1,20 +1,20 @@
-import {
-	BookOpen,
-	ChevronLeft,
-	ChevronRight,
-	Globe,
-	Image as ImageIcon,
-	Play,
-	X,
-} from "lucide-react";
+import GLightbox from "glightbox";
+import "glightbox/dist/css/glightbox.css";
+import { BookOpen, Globe, Image as ImageIcon, Play, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { type Project, privateProjects, projects } from "../../data/portfolio";
 import type { Translations } from "../../i18n/translations";
 import { track } from "../../lib/analytics";
 import { GithubIcon } from "../icons/GithubIcon";
-import { cardVariants } from "../layout/BentoGrid";
+import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
+import { OptimizedYouTubePlayer } from "../OptimizedYouTubePlayer";
 
 interface ProjectsCardProps {
 	id?: string;
@@ -23,159 +23,701 @@ interface ProjectsCardProps {
 }
 
 type TabType = "open-source" | "private";
+type MediaLayout = "video-hero" | "image-hero" | "single-focus";
+type LightboxInstance = ReturnType<typeof GLightbox>;
 
-// --- LIGHTWEIGHT MARKDOWN TO HTML RENDERER ---
-const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
-	const parseMarkdown = (md: string) => {
-		let html = md;
-		// Escape simple HTML characters to prevent XSS
-		html = html
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
-
-		// Convert headers
-		html = html.replace(
-			/^#\s+(.+)$/gm,
-			'<h1 class="text-2xl font-bold text-primary mt-6 mb-3 pb-2 border-b border-[var(--border-default)]">$1</h1>',
-		);
-		html = html.replace(
-			/^##\s+(.+)$/gm,
-			'<h2 class="text-xl font-bold text-primary mt-5 mb-2.5">$1</h2>',
-		);
-		html = html.replace(
-			/^###\s+(.+)$/gm,
-			'<h3 class="text-lg font-semibold text-primary mt-4 mb-2">$1</h3>',
-		);
-
-		// Convert code blocks
-		html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-			return `<pre class="bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-lg p-4 my-4 overflow-x-auto font-mono text-[13px] text-[var(--accent-text)]"><code class="language-${lang}">${code.trim()}</code></pre>`;
-		});
-
-		// Convert inline code
-		html = html.replace(
-			/`([^`]+)`/g,
-			'<code class="bg-[var(--bg-subtle)] border border-[var(--border-default)] px-1.5 py-0.5 rounded font-mono text-[12.5px] text-[var(--accent-text)]">$1</code>',
-		);
-
-		// Convert bold text
-		html = html.replace(
-			/\*\*([^*]+)\*\*/g,
-			'<strong class="font-bold text-primary">$1</strong>',
-		);
-
-		// Convert lists
-		html = html.replace(
-			/^\s*[-*]\s+(.+)$/gm,
-			'<li class="ml-4 list-disc text-secondary my-1 leading-relaxed">$1</li>',
-		);
-
-		// Convert paragraphs (double newline splits)
-		const blocks = html.split("\n\n");
-		// fallow-ignore-next-line complexity
-		const parsedBlocks = blocks.map((block) => {
-			const trimmed = block.trim();
-			if (
-				trimmed.startsWith("<h") ||
-				trimmed.startsWith("<li") ||
-				trimmed.startsWith("<pre") ||
-				trimmed.startsWith("<ul")
-			) {
-				return block;
-			}
-			if (trimmed === "") return "";
-			return `<p class="text-[14.5px] text-secondary leading-relaxed my-3">${block}</p>`;
-		});
-		html = parsedBlocks.join("\n");
-
-		return html;
-	};
-
-	const rawHtml = parseMarkdown(content);
-	return (
-		<div
-			// biome-ignore lint/security/noDangerouslySetInnerHtml: Trusted markdown content parsed to HTML
-			dangerouslySetInnerHTML={{ __html: rawHtml }}
-			className="markdown-body text-left"
-		/>
-	);
-};
-
-// --- IMAGE CAROUSEL COMPONENT ---
-interface ImageCarouselProps {
-	images: string[];
-	projectName: string;
-	onImageClick: (index: number) => void;
+interface LightboxElement {
+	href: string;
+	type: "image" | "video";
+	videoProvider?: "youtube";
+	title?: string;
+	description?: string;
+	alt?: string;
 }
 
-const ImageCarousel: React.FC<ImageCarouselProps> = ({
-	images,
-	projectName,
-	onImageClick,
-}) => {
-	const [currentIndex, setCurrentIndex] = useState(0);
+interface GallerySlide {
+	src: string;
+	width: number;
+	height: number;
+}
 
-	const handlePrev = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		e.preventDefault();
-		setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-	};
+interface ResolvedReadme {
+	rawUrl: string;
+	rawBaseUrl: string;
+	blobBaseUrl: string;
+	source: "remote" | "embedded";
+}
 
-	const handleNext = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		e.preventDefault();
-		setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-	};
+const readmeSanitizeSchema = {
+	...defaultSchema,
+	tagNames: [...(defaultSchema.tagNames ?? []), "div", "span", "br", "img"],
+	attributes: {
+		...defaultSchema.attributes,
+		a: [...(defaultSchema.attributes?.a ?? []), "href", "title"],
+		div: [...(defaultSchema.attributes?.div ?? []), "align"],
+		h1: [...(defaultSchema.attributes?.h1 ?? []), "align"],
+		h2: [...(defaultSchema.attributes?.h2 ?? []), "align"],
+		h3: [...(defaultSchema.attributes?.h3 ?? []), "align"],
+		h4: [...(defaultSchema.attributes?.h4 ?? []), "align"],
+		h5: [...(defaultSchema.attributes?.h5 ?? []), "align"],
+		h6: [...(defaultSchema.attributes?.h6 ?? []), "align"],
+		img: [
+			...(defaultSchema.attributes?.img ?? []),
+			"src",
+			"alt",
+			"title",
+			"width",
+			"height",
+			"align",
+		],
+		p: [...(defaultSchema.attributes?.p ?? []), "align"],
+		span: [...(defaultSchema.attributes?.span ?? []), "align"],
+	},
+};
 
-	if (!images || images.length === 0) return null;
+const getAlignmentClassName = (align?: string) => {
+	switch (align?.toLowerCase()) {
+		case "center":
+			return "text-center";
+		case "right":
+			return "text-right";
+		case "left":
+			return "text-left";
+		default:
+			return "";
+	}
+};
+
+interface MediaItemImage {
+	kind: "image";
+	slide: GallerySlide;
+}
+
+interface MediaItemVideo {
+	kind: "video";
+	videoUrl: string;
+}
+
+type MediaItem = MediaItemImage | MediaItemVideo;
+
+const imageSizesByProject: Record<
+	string,
+	Array<{ width: number; height: number }>
+> = {
+	avaluo: [
+		{ width: 1920, height: 1080 },
+		{ width: 1900, height: 925 },
+		{ width: 580, height: 835 },
+	],
+	emmax: [
+		{ width: 1900, height: 925 },
+		{ width: 1900, height: 925 },
+	],
+	calculator: [{ width: 1920, height: 995 }],
+	apihotel: [{ width: 1898, height: 1587 }],
+	estudiantes: [
+		{ width: 1798, height: 925 },
+		{ width: 1082, height: 775 },
+		{ width: 1078, height: 775 },
+		{ width: 1072, height: 775 },
+	],
+	"four-e-technologys": [
+		{ width: 1891, height: 881 },
+		{ width: 1891, height: 882 },
+		{ width: 1897, height: 873 },
+	],
+	"cs-asesorias": [
+		{ width: 1918, height: 745 },
+		{ width: 1896, height: 870 },
+		{ width: 1918, height: 880 },
+	],
+};
+
+const mediaTileBase =
+	"group relative overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-subtle)]/30 transition-all duration-200 hover:border-[var(--border-hover)]";
+
+const mediaTileOverlay =
+	"absolute inset-0 bg-gradient-to-t from-black/72 via-black/18 to-transparent";
+
+const getProjectDateText = (project: Project, lang: "en" | "es") => {
+	const start = lang === "es" ? project.startDateEs : project.startDateEn;
+	const end = lang === "es" ? project.endDateEs : project.endDateEn;
+	return end ? `${start} - ${end}` : start;
+};
+
+const buildGallerySlides = (project: Project): GallerySlide[] => {
+	const sizes = imageSizesByProject[project.id] ?? [];
+	return project.images.map((src, index) => {
+		const size = sizes[index] ?? { width: 1600, height: 900 };
+		return { src, width: size.width, height: size.height };
+	});
+};
+
+const getYouTubeId = (url: string) => {
+	const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+	const match = url.match(regExp);
+	return match && match[2].length === 11 ? match[2] : null;
+};
+
+const getLightboxVideoUrl = (url: string) => {
+	const videoId = getYouTubeId(url);
+	return videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
+};
+
+const isAbsoluteUrl = (url: string) => /^[a-z][a-z\d+\-.]*:/i.test(url);
+
+const isHashLink = (url: string) => url.startsWith("#");
+
+const normalizeBaseUrl = (url: string) => (url.endsWith("/") ? url : `${url}/`);
+
+const getDirectoryPath = (path: string) => {
+	const normalizedPath = path.replace(/^\/+/, "");
+	const segments = normalizedPath.split("/");
+	segments.pop();
+	return segments.length > 0 ? `${segments.join("/")}/` : "";
+};
+
+const parseGithubRepo = (githubUrl: string) => {
+	try {
+		const url = new URL(githubUrl);
+		if (url.hostname !== "github.com") return null;
+
+		const parts = url.pathname.split("/").filter(Boolean);
+		if (parts.length < 2) return null;
+
+		return {
+			owner: parts[0],
+			repo: parts[1],
+		};
+	} catch {
+		return null;
+	}
+};
+
+const buildReadmeCandidates = (project: Project): ResolvedReadme[] => {
+	const repoInfo = project.githubUrl
+		? parseGithubRepo(project.githubUrl)
+		: null;
+	const candidates: ResolvedReadme[] = [];
+
+	if (project.readmeUrl) {
+		try {
+			const rawUrl = new URL(project.readmeUrl);
+			const parts = rawUrl.pathname.split("/").filter(Boolean);
+			if (
+				rawUrl.hostname === "raw.githubusercontent.com" &&
+				parts.length >= 4
+			) {
+				const [owner, repo, branch, ...pathParts] = parts;
+				const directory = getDirectoryPath(pathParts.join("/"));
+				candidates.push({
+					rawUrl: project.readmeUrl,
+					rawBaseUrl: normalizeBaseUrl(
+						`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${directory}`,
+					),
+					blobBaseUrl: normalizeBaseUrl(
+						`https://github.com/${owner}/${repo}/blob/${branch}/${directory}`,
+					),
+					source: "remote",
+				});
+			}
+		} catch {}
+	}
+
+	if (!repoInfo) {
+		return candidates;
+	}
+
+	for (const branch of ["main", "master"]) {
+		for (const fileName of ["README.md", "README.MD"]) {
+			const rawUrl = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${branch}/${fileName}`;
+			if (candidates.some((candidate) => candidate.rawUrl === rawUrl)) {
+				continue;
+			}
+
+			candidates.push({
+				rawUrl,
+				rawBaseUrl: normalizeBaseUrl(
+					`https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${branch}/`,
+				),
+				blobBaseUrl: normalizeBaseUrl(
+					`https://github.com/${repoInfo.owner}/${repoInfo.repo}/blob/${branch}/`,
+				),
+				source: "remote",
+			});
+		}
+	}
+
+	return candidates;
+};
+
+const validateRemoteReadme = async (rawUrl: string, signal?: AbortSignal) => {
+	try {
+		const headResponse = await fetch(rawUrl, {
+			method: "HEAD",
+			signal,
+		});
+
+		if (headResponse.ok) {
+			return true;
+		}
+
+		if (headResponse.status !== 405) {
+			return false;
+		}
+	} catch (error) {
+		if (error instanceof DOMException && error.name === "AbortError") {
+			throw error;
+		}
+	}
+
+	try {
+		const getResponse = await fetch(rawUrl, { signal });
+		return getResponse.ok;
+	} catch (error) {
+		if (error instanceof DOMException && error.name === "AbortError") {
+			throw error;
+		}
+		return false;
+	}
+};
+
+const resolveRemoteReadme = async (
+	project: Project,
+	signal?: AbortSignal,
+): Promise<ResolvedReadme | null> => {
+	for (const candidate of buildReadmeCandidates(project)) {
+		if (await validateRemoteReadme(candidate.rawUrl, signal)) {
+			return candidate;
+		}
+	}
+
+	return null;
+};
+
+const resolveMarkdownUrl = (
+	url: string,
+	readme: ResolvedReadme | null,
+	target: "image" | "link",
+) => {
+	if (!readme || isAbsoluteUrl(url) || isHashLink(url)) {
+		return url;
+	}
+
+	const baseUrl = target === "image" ? readme.rawBaseUrl : readme.blobBaseUrl;
+	return new URL(url, baseUrl).toString();
+};
+
+const MarkdownRenderer: React.FC<{
+	content: string;
+	readme: ResolvedReadme | null;
+}> = ({ content, readme }) => {
+	const isRemoteReadme = readme?.source === "remote";
 
 	return (
-		<div className="relative w-full h-full group/carousel">
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: Click triggers fullscreen zoom modal */}
-			<img
-				src={images[currentIndex]}
-				alt={`${projectName} mockup screen ${currentIndex + 1}`}
-				className="w-full h-full object-cover select-none transition-transform duration-350 cursor-zoom-in"
-				loading="lazy"
-				onClick={() => onImageClick(currentIndex)}
-			/>
-			<div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
-
-			{images.length > 1 && (
-				<>
-					<button
-						type="button"
-						onClick={handlePrev}
-						className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 border border-white/10 hover:bg-black/85 flex items-center justify-center text-white transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer select-none z-10"
-					>
-						<ChevronLeft size={16} />
-					</button>
-					<button
-						type="button"
-						onClick={handleNext}
-						className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 border border-white/10 hover:bg-black/85 flex items-center justify-center text-white transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer select-none z-10"
-					>
-						<ChevronRight size={16} />
-					</button>
-
-					<div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 select-none">
-						{images.map((_, idx) => (
-							<span
-								key={images[idx]}
-								className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
-									idx === currentIndex ? "bg-white scale-125" : "bg-white/40"
-								}`}
-							/>
-						))}
-					</div>
-				</>
-			)}
+		<div className="markdown-body text-left">
+			<ReactMarkdown
+				remarkPlugins={[remarkGfm]}
+				rehypePlugins={
+					isRemoteReadme
+						? [rehypeRaw, [rehypeSanitize, readmeSanitizeSchema]]
+						: []
+				}
+				components={{
+					h1: ({ children, node }) => (
+						<h1
+							className={`text-2xl font-bold text-primary mt-6 mb-3 pb-2 border-b border-[var(--border-default)] ${getAlignmentClassName(
+								typeof node?.properties?.align === "string"
+									? node.properties.align
+									: undefined,
+							)}`}
+						>
+							{children}
+						</h1>
+					),
+					h2: ({ children, node }) => (
+						<h2
+							className={`text-xl font-bold text-primary mt-5 mb-2.5 ${getAlignmentClassName(
+								typeof node?.properties?.align === "string"
+									? node.properties.align
+									: undefined,
+							)}`}
+						>
+							{children}
+						</h2>
+					),
+					h3: ({ children, node }) => (
+						<h3
+							className={`text-lg font-semibold text-primary mt-4 mb-2 ${getAlignmentClassName(
+								typeof node?.properties?.align === "string"
+									? node.properties.align
+									: undefined,
+							)}`}
+						>
+							{children}
+						</h3>
+					),
+					p: ({ children, node }) => (
+						<p
+							className={`text-[14.5px] text-secondary leading-relaxed my-3 ${getAlignmentClassName(
+								typeof node?.properties?.align === "string"
+									? node.properties.align
+									: undefined,
+							)}`}
+						>
+							{children}
+						</p>
+					),
+					div: ({ children, node }) => (
+						<div
+							className={`text-[14.5px] text-secondary leading-relaxed my-3 ${getAlignmentClassName(
+								typeof node?.properties?.align === "string"
+									? node.properties.align
+									: undefined,
+							)}`}
+						>
+							{children}
+						</div>
+					),
+					span: ({ children }) => <span>{children}</span>,
+					br: () => <br />,
+					strong: ({ children }) => (
+						<strong className="font-bold text-primary">{children}</strong>
+					),
+					ul: ({ children }) => (
+						<ul className="my-3 space-y-1 pl-5 list-disc text-secondary">
+							{children}
+						</ul>
+					),
+					ol: ({ children }) => (
+						<ol className="my-3 space-y-1 pl-5 list-decimal text-secondary">
+							{children}
+						</ol>
+					),
+					li: ({ children }) => (
+						<li className="text-secondary leading-relaxed">{children}</li>
+					),
+					code: ({ children, className }) =>
+						className ? (
+							<code className={className}>{children}</code>
+						) : (
+							<code className="bg-[var(--bg-subtle)] border border-[var(--border-default)] px-1.5 py-0.5 rounded font-mono text-[12.5px] text-[var(--accent-text)]">
+								{children}
+							</code>
+						),
+					pre: ({ children }) => (
+						<pre className="bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-lg p-4 my-4 overflow-x-auto font-mono text-[13px] text-[var(--accent-text)]">
+							{children}
+						</pre>
+					),
+					table: ({ children }) => (
+						<div className="my-4 overflow-x-auto">
+							<table className="min-w-full border-collapse text-[14px] text-secondary">
+								{children}
+							</table>
+						</div>
+					),
+					th: ({ children }) => (
+						<th className="border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2 text-left font-semibold text-primary">
+							{children}
+						</th>
+					),
+					td: ({ children }) => (
+						<td className="border border-[var(--border-default)] px-3 py-2 align-top">
+							{children}
+						</td>
+					),
+					a: ({ children, href }) => (
+						<a
+							href={href ? resolveMarkdownUrl(href, readme, "link") : undefined}
+							target={href && !isHashLink(href) ? "_blank" : undefined}
+							rel={
+								href && !isHashLink(href) ? "noopener noreferrer" : undefined
+							}
+							className="text-[var(--accent-light)] underline underline-offset-2 transition-colors hover:text-primary"
+						>
+							{children}
+						</a>
+					),
+					img: ({ src, alt, width, height, title }) => (
+						<img
+							src={src ? resolveMarkdownUrl(src, readme, "image") : undefined}
+							alt={alt ?? ""}
+							width={width}
+							height={height}
+							title={title}
+							loading="lazy"
+							className="inline-block h-auto max-w-full align-middle"
+						/>
+					),
+				}}
+			>
+				{content}
+			</ReactMarkdown>
 		</div>
 	);
 };
 
-// --- LINK CARD COMPONENT (Bento Box Sub-element) ---
+const getSlideOrientation = (slide: GallerySlide) => {
+	const ratio = slide.width / slide.height;
+	if (ratio > 1.15) return "wide";
+	if (ratio < 0.9) return "tall";
+	return "balanced";
+};
+
+const buildMediaItems = (project: Project): MediaItem[] => {
+	const slides = buildGallerySlides(project);
+	const orderedSlides =
+		project.id === "avaluo" && slides.length >= 3
+			? [slides[2], slides[0], slides[1]]
+			: [...slides].sort((left, right) => {
+					const leftOrientation = getSlideOrientation(left);
+					const rightOrientation = getSlideOrientation(right);
+					const score = (orientation: string) => {
+						if (orientation === "wide") return 2;
+						if (orientation === "balanced") return 1;
+						return 0;
+					};
+
+					return score(rightOrientation) - score(leftOrientation);
+				});
+
+	const items: MediaItem[] = orderedSlides.map((slide) => ({
+		kind: "image",
+		slide,
+	}));
+
+	if (project.youtubeUrl) {
+		items.unshift({
+			kind: "video",
+			videoUrl: project.youtubeUrl,
+		});
+	}
+
+	return items;
+};
+
+const getMediaLayout = (items: MediaItem[]): MediaLayout => {
+	if (items[0]?.kind === "video") return "video-hero";
+	if (items.length === 1) return "single-focus";
+	return "image-hero";
+};
+
+const getTileClassName = (
+	projectId: string,
+	layout: MediaLayout,
+	item: MediaItem,
+	index: number,
+	imageCount: number,
+) => {
+	if (projectId === "emmax") {
+		return "aspect-[24/7] min-h-[140px] sm:min-h-[160px]";
+	}
+
+	if (projectId === "avaluo" && layout === "video-hero") {
+		if (index === 0 && item.kind === "video") {
+			return "sm:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+		}
+
+		if (index === 1 && item.kind === "image") {
+			return "sm:col-span-1 lg:col-span-2 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+		}
+
+		return "sm:col-span-1 lg:col-span-2 lg:row-span-1 min-h-[140px] sm:min-h-[164px]";
+	}
+
+	if (layout === "single-focus") {
+		return "sm:col-span-3 lg:col-span-6 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+	}
+
+	if (layout === "video-hero" && index === 0 && item.kind === "video") {
+		return "sm:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+	}
+
+	if (layout === "image-hero" && index === 0 && item.kind === "image") {
+		return "sm:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+	}
+
+	if (imageCount === 1 && index === 1) {
+		return "sm:col-span-1 lg:col-span-2 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+	}
+
+	return "sm:col-span-1 lg:col-span-2 lg:row-span-1 min-h-[140px] sm:min-h-[164px]";
+};
+
+const getCollageGridClassName = (projectId: string) => {
+	if (projectId === "emmax") {
+		return "grid grid-cols-1 gap-2";
+	}
+
+	return "grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-2 lg:auto-rows-[164px]";
+};
+
+const buildLightboxElements = (
+	project: Project,
+	items: MediaItem[],
+): LightboxElement[] => {
+	return items.map((item) => {
+		if (item.kind === "video") {
+			return {
+				href: getLightboxVideoUrl(item.videoUrl),
+				type: "video",
+				videoProvider: "youtube",
+				title: project.name,
+				description: "Video demo",
+			};
+		}
+
+		return {
+			href: item.slide.src,
+			type: "image",
+			title: project.name,
+			alt: `${project.name} preview`,
+			description: "Preview image",
+		};
+	});
+};
+
+const VideoHeroTile: React.FC<{
+	projectName: string;
+	youtubeUrl: string;
+	onOpen: () => void;
+	className: string;
+}> = ({ projectName, youtubeUrl, onOpen, className }) => {
+	return (
+		<button
+			type="button"
+			onClick={onOpen}
+			className={`${mediaTileBase} ${className} text-left focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50`}
+		>
+			<div className="absolute inset-0 overflow-hidden rounded-xl">
+				<OptimizedYouTubePlayer
+					youtubeUrl={youtubeUrl}
+					projectName={projectName}
+					muted
+					autoplay
+					showControls={false}
+					className="pointer-events-none"
+				/>
+				<div className={mediaTileOverlay} />
+				<div className="absolute right-3 bottom-3 rounded-full bg-black/55 backdrop-blur-sm border border-white/10 p-2 text-white/90">
+					<Play size={14} fill="currentColor" />
+				</div>
+			</div>
+		</button>
+	);
+};
+
+const ImageTile: React.FC<{
+	projectName: string;
+	image: GallerySlide;
+	className: string;
+	onOpen: () => void;
+}> = ({ projectName, image, className, onOpen }) => {
+	return (
+		<button
+			type="button"
+			onClick={onOpen}
+			className={`${mediaTileBase} rounded-lg ${className} focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50`}
+		>
+			<div className="absolute inset-0 p-1.5">
+				<div className="relative h-full w-full overflow-hidden rounded-md border border-white/5 bg-[var(--bg-card)]/80">
+					<img
+						src={image.src}
+						alt={`${projectName} preview`}
+						className="absolute inset-0 h-full w-full select-none object-cover object-left-top"
+						loading="lazy"
+					/>
+					<div className={mediaTileOverlay} />
+					<div className="absolute right-3 bottom-3 rounded-full bg-black/55 backdrop-blur-sm border border-white/10 p-2 text-white/90">
+						<ImageIcon size={14} />
+					</div>
+				</div>
+			</div>
+		</button>
+	);
+};
+
+const MediaCollage: React.FC<{
+	project: Project;
+}> = ({ project }) => {
+	const items = useMemo(() => buildMediaItems(project), [project]);
+	const lightboxElements = useMemo(
+		() => buildLightboxElements(project, items),
+		[project, items],
+	);
+	const layout = getMediaLayout(items);
+	const imageCount = items.filter((item) => item.kind === "image").length;
+	const lightboxRef = useRef<LightboxInstance | null>(null);
+
+	useEffect(() => {
+		const lightbox = GLightbox({
+			elements: lightboxElements as unknown as [],
+			openEffect: "zoom",
+			closeEffect: "fade",
+			slideEffect: "slide",
+			touchNavigation: true,
+			keyboardNavigation: true,
+			closeOnOutsideClick: true,
+			autoplayVideos: true,
+			loop: false,
+			zoomable: true,
+			draggable: true,
+			width: "92vw",
+			height: "78vh",
+			videosWidth: "92vw",
+			descPosition: "bottom",
+		});
+
+		lightboxRef.current = lightbox;
+
+		return () => {
+			lightbox.destroy();
+			lightboxRef.current = null;
+		};
+	}, [lightboxElements]);
+
+	const openLightboxAt = (index: number) => {
+		lightboxRef.current?.openAt(index);
+	};
+
+	return (
+		<div className={getCollageGridClassName(project.id)}>
+			{items.map((item, index) => {
+				const className = getTileClassName(
+					project.id,
+					layout,
+					item,
+					index,
+					imageCount,
+				);
+
+				if (item.kind === "video") {
+					return (
+						<VideoHeroTile
+							key={`${project.id}-video`}
+							projectName={project.name}
+							youtubeUrl={item.videoUrl}
+							onOpen={() => openLightboxAt(index)}
+							className={className}
+						/>
+					);
+				}
+
+				return (
+					<ImageTile
+						key={item.slide.src}
+						projectName={project.name}
+						image={item.slide}
+						className={className}
+						onOpen={() => openLightboxAt(index)}
+					/>
+				);
+			})}
+		</div>
+	);
+};
+
 interface LinkCardProps {
 	href?: string;
 	onClick?: () => void;
@@ -209,36 +751,122 @@ const LinkCard: React.FC<LinkCardProps> = ({
 		</>
 	);
 
-	const baseClass = `flex flex-col justify-between p-4 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)] transition-all duration-200 hover:-translate-y-0.5 text-left h-[105px] cursor-pointer group ${className}`;
+	const baseClass = `flex flex-col justify-between p-4 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl hover:border-[var(--accent-brand)]/40 hover:bg-[var(--bg-card-hover)] text-left h-[105px] cursor-pointer group ${className}`;
+	const hoverTapProps = {
+		whileHover: { y: -3, scale: 1.01 },
+		whileTap: { scale: 0.99 },
+		transition: { type: "spring" as const, stiffness: 450, damping: 20 },
+	};
 
 	if (href) {
 		return (
-			<a
+			<motion.a
+				{...hoverTapProps}
 				href={href}
 				target="_blank"
 				rel="noopener noreferrer"
 				className={baseClass}
 			>
 				{content}
-			</a>
+			</motion.a>
 		);
 	}
 
 	return (
-		<button type="button" onClick={onClick} className={baseClass}>
+		<motion.button
+			{...hoverTapProps}
+			type="button"
+			onClick={onClick}
+			className={baseClass}
+		>
 			{content}
-		</button>
+		</motion.button>
 	);
 };
 
-// Helper to extract and format project date range cleanly
-const getProjectDateText = (project: Project, lang: "en" | "es") => {
-	const start = lang === "es" ? project.startDateEs : project.startDateEn;
-	const end = lang === "es" ? project.endDateEs : project.endDateEn;
-	return end ? `${start} - ${end}` : start;
+interface ReadmeModalProps {
+	project: Project | null;
+	readme: ResolvedReadme | null;
+	readmeText: string;
+	loading: boolean;
+	lang: "en" | "es";
+	onClose: () => void;
+}
+
+const ReadmeModal: React.FC<ReadmeModalProps> = ({
+	project,
+	readme,
+	readmeText,
+	loading,
+	lang,
+	onClose,
+}) => {
+	useEffect(() => {
+		if (!project) return;
+
+		const { overflow } = document.body.style;
+		document.body.style.overflow = "hidden";
+
+		return () => {
+			document.body.style.overflow = overflow;
+		};
+	}, [project]);
+
+	if (!project) {
+		return null;
+	}
+
+	return createPortal(
+		<AnimatePresence>
+			<div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 md:p-8">
+				<motion.div
+					initial={{ opacity: 0, scale: 0.95, y: 15 }}
+					animate={{ opacity: 1, scale: 1, y: 0 }}
+					exit={{ opacity: 0, scale: 0.95, y: 15 }}
+					transition={{ duration: 0.25, ease: "easeOut" }}
+					className="bg-[var(--bg-card)] border border-[var(--border-hover)] rounded-xl w-full max-w-[800px] max-h-[85dvh] h-[80dvh] flex flex-col overflow-hidden shadow-2xl relative"
+				>
+					<div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-[var(--border-default)] select-none gap-3">
+						<div className="flex items-center gap-2">
+							<BookOpen size={18} className="text-secondary" />
+							<span className="font-mono text-[14.5px] font-bold text-primary">
+								{project.name} -{" "}
+								{readme?.source === "remote" ? "README.md" : "DOCUMENTACION"}
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={onClose}
+							className="text-secondary hover:text-primary p-1.5 rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
+						>
+							<X size={18} />
+						</button>
+					</div>
+
+					<div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar">
+						{loading ? (
+							<div className="w-full h-full flex flex-col items-center justify-center gap-3 select-none">
+								<div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-default)] border-t-[var(--accent-light)] animate-spin" />
+								<span className="font-mono text-[13px] text-secondary">
+									{lang === "es"
+										? "Cargando archivo..."
+										: "Loading document..."}
+								</span>
+							</div>
+						) : (
+							<MarkdownRenderer
+								content={readmeText}
+								readme={readme?.source === "remote" ? readme : null}
+							/>
+						)}
+					</div>
+				</motion.div>
+			</div>
+		</AnimatePresence>,
+		document.body,
+	);
 };
 
-// --- PROJECT SELECTOR COMPONENT ---
 interface ProjectSelectorProps {
 	activeProjects: Project[];
 	activeProjectId: string;
@@ -252,122 +880,130 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 	onSelect,
 	lang,
 }) => {
+	const renderProjectItem = (project: Project, isMobile: boolean) => {
+		const active = project.id === activeProjectId;
+		return (
+			<button
+				key={project.id}
+				type="button"
+				onClick={() => onSelect(project.id, project.name)}
+				className={
+					isMobile
+						? `relative w-full px-3 py-2.5 rounded-xl border flex flex-col gap-0.5 cursor-pointer text-left overflow-hidden transition-all duration-150 ${
+								active
+									? "border-transparent text-primary font-medium"
+									: "border-[var(--border-default)] text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/40 hover:border-[var(--border-hover)]"
+							}`
+						: `relative w-full text-left px-3.5 py-2.5 rounded-lg flex flex-col gap-1 cursor-pointer border select-none overflow-hidden transition-all duration-150 ${
+								active
+									? "border-transparent text-primary font-semibold shadow-xs"
+									: "border-transparent text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/30 hover:border-[var(--border-default)]"
+							}`
+				}
+			>
+				{active && (
+					<motion.div
+						layoutId={
+							isMobile
+								? "activeProjectChipHighlight"
+								: "activeProjectListHighlight"
+						}
+						className={
+							isMobile
+								? "absolute inset-0 bg-[var(--bg-card)] border border-[var(--border-hover)] rounded-xl -z-0"
+								: "absolute inset-0 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg -z-0"
+						}
+						transition={{ type: "spring", stiffness: 350, damping: 30 }}
+					/>
+				)}
+				<div
+					className={
+						isMobile
+							? "relative z-10 flex items-center gap-1.5 text-[12.5px]"
+							: "relative z-10 flex items-center gap-2.5 min-w-0 w-full"
+					}
+				>
+					<span
+						className={
+							isMobile
+								? `w-1.5 h-1.5 rounded-full transition-all ${
+										active
+											? "bg-[var(--accent-brand)] scale-110"
+											: "border border-[var(--border-default)]"
+									}`
+								: `w-2 h-2 rounded-full flex-shrink-0 transition-all ${
+										active
+											? "bg-[var(--accent-brand)] scale-110 shadow-[0_0_8px_rgba(43,69,136,0.55)]"
+											: "border border-[var(--border-default)]"
+									}`
+						}
+					/>
+					{isMobile ? (
+						<span className="truncate block text-[12.5px] font-medium">
+							{project.name}
+						</span>
+					) : (
+						<span className="truncate text-[13.5px] font-bold">
+							{project.name}
+						</span>
+					)}
+				</div>
+				<div
+					className={
+						isMobile
+							? "relative z-10 text-[9.5px] font-mono text-muted mt-0.5"
+							: "relative z-10 pl-4.5 text-[10px] font-mono text-muted"
+					}
+				>
+					{getProjectDateText(project, lang)}
+				</div>
+			</button>
+		);
+	};
+
 	return (
 		<>
-			{/* Mobile chips list (Horizontal Scrollable) */}
-			<div className="flex md:hidden overflow-x-auto gap-2 pb-2.5 scrollbar-none select-none w-full">
-				{activeProjects.map((p) => {
-					const active = p.id === activeProjectId;
-					return (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => onSelect(p.id, p.name)}
-							className={`flex-shrink-0 px-3.5 py-2 rounded-xl border flex flex-col gap-0.5 cursor-pointer transition-colors text-left ${
-								active
-									? "bg-[var(--bg-subtle)] border-[var(--border-hover)] text-primary font-medium"
-									: "bg-transparent border-[var(--border-default)] text-secondary hover:text-primary"
-							}`}
-						>
-							<div className="flex items-center gap-1.5 text-[12.5px] font-semibold">
-								<span
-									className={`w-1.5 h-1.5 rounded-full transition-all ${
-										active
-											? "bg-[var(--accent-light)] scale-110"
-											: "border border-[var(--border-default)]"
-									}`}
-								/>
-								{p.name}
-							</div>
-							<div className="pl-3 text-[9.5px] font-mono text-muted">
-								{getProjectDateText(p, lang)}
-							</div>
-						</button>
-					);
-				})}
+			<div className="grid grid-cols-2 md:hidden gap-2 pb-1 select-none w-full">
+				{activeProjects.map((project) => renderProjectItem(project, true))}
 			</div>
-
-			{/* Desktop list selector */}
-			<div className="hidden md:flex flex-col gap-1.5 mt-1">
-				{activeProjects.map((p) => {
-					const active = p.id === activeProjectId;
-					return (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => onSelect(p.id, p.name)}
-							className={`w-full text-left px-3.5 py-2.5 rounded-lg flex flex-col gap-1 transition-all cursor-pointer border select-none ${
-								active
-									? "bg-[var(--bg-subtle)] border-[var(--border-default)] text-primary font-semibold shadow-xs"
-									: "bg-transparent border-transparent text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/40"
-							}`}
-						>
-							<div className="flex items-center gap-2.5 min-w-0 w-full">
-								<span
-									className={`w-2 h-2 rounded-full flex-shrink-0 transition-all ${
-										active
-											? "bg-[var(--accent-light)] scale-110 shadow-[0_0_8px_var(--accent-light)]"
-											: "border border-[var(--border-default)]"
-									}`}
-								/>
-								<span className="truncate text-[13.5px] font-bold">
-									{p.name}
-								</span>
-							</div>
-							<div className="pl-4.5 text-[10px] font-mono text-muted">
-								{getProjectDateText(p, lang)}
-							</div>
-						</button>
-					);
-				})}
+			<div className="hidden md:flex flex-col gap-1.5 mt-1 relative">
+				{activeProjects.map((project) => renderProjectItem(project, false))}
 			</div>
 		</>
 	);
 };
 
-// --- PROJECT BENTO PREVIEW PANEL ---
 interface ProjectBentoPreviewProps {
 	project: Project;
 	lang: "en" | "es";
-	mediaTab: "mockups" | "video";
-	setMediaTab: (tab: "mockups" | "video") => void;
 	onOpenReadme: (project: Project) => void;
-	onImageClick: (images: string[], index: number) => void;
+	showReadme: boolean;
+	readmeLabel: string;
 }
 
-// fallow-ignore-next-line complexity
 const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 	project,
 	lang,
-	mediaTab,
-	setMediaTab,
 	onOpenReadme,
-	onImageClick,
+	showReadme,
+	readmeLabel,
 }) => {
 	const showGithub = !!project.githubUrl;
 	const showLive = !!project.liveUrl;
-	const showReadme =
-		!!project.readmeUrl ||
-		!!project.readmeContentEs ||
-		!!project.readmeContentEn;
 
 	const totalCards =
 		(showGithub ? 1 : 0) + (showLive ? 1 : 0) + (showReadme ? 1 : 0);
 
-	// Compute link grid column configuration dynamically
 	let colsClass = "grid-cols-1 sm:grid-cols-3";
 	if (totalCards === 1) {
 		colsClass = "grid-cols-1";
 	} else if (totalCards === 2) {
 		colsClass = "grid-cols-1 sm:grid-cols-2";
-	} else if (totalCards === 3) {
-		colsClass = "grid-cols-1 sm:grid-cols-3";
 	}
 
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
-			{/* Bento A: Description & Languages */}
-			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between gap-4 text-left">
+			<div className="sm:col-span-6 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between gap-4 text-left">
 				<div>
 					<h3 className="text-[17px] font-bold text-primary tracking-tight">
 						{project.name}
@@ -391,58 +1027,10 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 				</div>
 			</div>
 
-			{/* Bento C: Images Carousel / YouTube player container */}
-			<div className="sm:col-span-6 bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-xl overflow-hidden relative aspect-video md:aspect-[21/9] bg-black/10">
-				{project.youtubeUrl && project.images.length > 0 && (
-					<div className="absolute top-3 right-3 z-20 flex bg-black/60 backdrop-blur-xs border border-white/10 rounded-lg p-0.5 select-none">
-						<button
-							type="button"
-							onClick={() => setMediaTab("mockups")}
-							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-								mediaTab === "mockups"
-									? "bg-white text-black"
-									: "text-white/70 hover:text-white"
-							}`}
-						>
-							<ImageIcon size={12} />
-							{lang === "es" ? "Imágenes" : "Mockups"}
-						</button>
-						<button
-							type="button"
-							onClick={() => setMediaTab("video")}
-							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
-								mediaTab === "video"
-									? "bg-white text-black"
-									: "text-white/70 hover:text-white"
-							}`}
-						>
-							<Play
-								size={12}
-								fill={mediaTab === "video" ? "black" : "currentColor"}
-							/>
-							{lang === "es" ? "Video Demo" : "Video Demo"}
-						</button>
-					</div>
-				)}
-
-				{mediaTab === "video" && project.youtubeUrl ? (
-					<iframe
-						src={project.youtubeUrl}
-						title={`${project.name} video demo`}
-						className="absolute inset-0 w-full h-full border-0"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-						allowFullScreen
-					/>
-				) : (
-					<ImageCarousel
-						images={project.images}
-						projectName={project.name}
-						onImageClick={(index) => onImageClick(project.images, index)}
-					/>
-				)}
+			<div className="sm:col-span-6 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl relative p-3 md:p-4">
+				<MediaCollage project={project} />
 			</div>
 
-			{/* Bento D: Row of Interactive link cards */}
 			{totalCards > 0 && (
 				<div className={`sm:col-span-6 grid gap-3 ${colsClass}`}>
 					{showGithub && project.githubUrl && (
@@ -450,7 +1038,7 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 							href={project.githubUrl}
 							icon={<GithubIcon size={18} />}
 							label="GitHub"
-							title={lang === "es" ? "Código fuente" : "Source code"}
+							title={lang === "es" ? "Codigo fuente" : "Source code"}
 						/>
 					)}
 					{showLive && project.liveUrl && (
@@ -466,15 +1054,7 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 							onClick={() => onOpenReadme(project)}
 							icon={<BookOpen size={18} />}
 							label="Markdown"
-							title={
-								project.readmeUrl
-									? lang === "es"
-										? "Ver README"
-										: "View README"
-									: lang === "es"
-										? "Ver Documentación"
-										: "View Docs"
-							}
+							title={readmeLabel}
 						/>
 					)}
 				</div>
@@ -483,43 +1063,23 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 	);
 };
 
-// --- MAIN PROJECT CARD EXPORT ---
-// fallow-ignore-next-line complexity
 export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 	const [activeTab, setActiveTab] = useState<TabType>("open-source");
 	const activeProjects =
 		activeTab === "open-source" ? projects : privateProjects;
-
 	const [activeProjectId, setActiveProjectId] = useState<string>(
 		activeProjects[0].id,
 	);
-	const [mediaTab, setMediaTab] = useState<"mockups" | "video">("mockups");
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 	const [readmeText, setReadmeText] = useState<string>("");
 	const [loadingReadme, setLoadingReadme] = useState<boolean>(false);
-	const [lightboxImages, setLightboxImages] = useState<string[]>([]);
-	const [lightboxIndex, setLightboxIndex] = useState<number>(-1);
+	const [selectedReadme, setSelectedReadme] = useState<ResolvedReadme | null>(
+		null,
+	);
+	const [resolvedReadmes, setResolvedReadmes] = useState<
+		Record<string, ResolvedReadme | null | undefined>
+	>({});
 
-	// Keyboard handlers for lightbox
-	useEffect(() => {
-		if (lightboxIndex === -1) return;
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") setLightboxIndex(-1);
-			else if (e.key === "ArrowRight") {
-				setLightboxIndex((prev) =>
-					prev === lightboxImages.length - 1 ? 0 : prev + 1,
-				);
-			} else if (e.key === "ArrowLeft") {
-				setLightboxIndex((prev) =>
-					prev === 0 ? lightboxImages.length - 1 : prev - 1,
-				);
-			}
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [lightboxIndex, lightboxImages]);
-
-	// Sync active ID when category changes
 	const handleTabChange = (tab: TabType) => {
 		setActiveTab(tab);
 		const list = tab === "open-source" ? projects : privateProjects;
@@ -528,60 +1088,115 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 	};
 
 	const currentActiveProject =
-		activeProjects.find((p) => p.id === activeProjectId) || activeProjects[0];
+		activeProjects.find((project) => project.id === activeProjectId) ||
+		activeProjects[0];
+	const currentResolvedReadme = resolvedReadmes[currentActiveProject.id];
+	const currentProjectHasReadme =
+		activeTab === "open-source"
+			? currentResolvedReadme !== undefined && currentResolvedReadme !== null
+			: !!(lang === "es"
+					? currentActiveProject.readmeContentEs
+					: currentActiveProject.readmeContentEn);
+	const currentReadmeLabel =
+		activeTab === "open-source"
+			? lang === "es"
+				? "Ver README"
+				: "View README"
+			: lang === "es"
+				? "Ver Documentacion"
+				: "View Docs";
 
-	// Reset media tab state when switching projects
 	useEffect(() => {
-		if (currentActiveProject) {
-			setMediaTab(
-				currentActiveProject.images.length === 0 &&
-					currentActiveProject.youtubeUrl
-					? "video"
-					: "mockups",
-			);
+		if (activeTab !== "open-source" || !currentActiveProject.githubUrl) {
+			return;
 		}
-	}, [currentActiveProject]);
+
+		if (resolvedReadmes[currentActiveProject.id] !== undefined) {
+			return;
+		}
+
+		const controller = new AbortController();
+
+		resolveRemoteReadme(currentActiveProject, controller.signal)
+			.then((resolvedReadme) => {
+				setResolvedReadmes((previous) => ({
+					...previous,
+					[currentActiveProject.id]: resolvedReadme,
+				}));
+			})
+			.catch((error) => {
+				if (error instanceof DOMException && error.name === "AbortError") {
+					return;
+				}
+
+				setResolvedReadmes((previous) => ({
+					...previous,
+					[currentActiveProject.id]: null,
+				}));
+			});
+
+		return () => controller.abort();
+	}, [activeTab, currentActiveProject, resolvedReadmes]);
 
 	const handleOpenReadme = (project: Project) => {
 		setSelectedProject(project);
 		setLoadingReadme(true);
+		setSelectedReadme(null);
 		track.projectClicked(project.name);
 
-		if (project.readmeUrl) {
-			fetch(project.readmeUrl)
+		if (activeTab === "open-source") {
+			const resolvedReadme = resolvedReadmes[project.id];
+			if (!resolvedReadme) {
+				setReadmeText(
+					lang === "es"
+						? "# README no disponible\n\nNo se encontro un README remoto valido para este repositorio."
+						: "# README unavailable\n\nNo valid remote README was found for this repository.",
+				);
+				setLoadingReadme(false);
+				return;
+			}
+
+			fetch(resolvedReadme.rawUrl)
 				.then((res) => {
 					if (!res.ok) throw new Error("Fail to load README");
 					return res.text();
 				})
 				.then((text) => {
 					setReadmeText(text);
+					setSelectedReadme(resolvedReadme);
 					setLoadingReadme(false);
 				})
 				.catch(() => {
 					setReadmeText(
-						`# ${project.name}\n\n${
-							lang === "es" ? project.descriptionEs : project.descriptionEn
-						}\n\n*No se pudo descargar el archivo README desde GitHub en este momento.*`,
+						lang === "es"
+							? `# ${project.name}\n\nNo se pudo descargar el archivo README desde GitHub en este momento.`
+							: `# ${project.name}\n\nThe README could not be downloaded from GitHub right now.`,
 					);
 					setLoadingReadme(false);
 				});
-		} else {
-			const content =
-				lang === "es" ? project.readmeContentEs : project.readmeContentEn;
-			setReadmeText(content || "");
-			setLoadingReadme(false);
+			return;
 		}
+
+		const content =
+			lang === "es" ? project.readmeContentEs : project.readmeContentEn;
+		setReadmeText(content || "");
+		setSelectedReadme({
+			rawUrl: "",
+			rawBaseUrl: "",
+			blobBaseUrl: "",
+			source: "embedded",
+		});
+		setLoadingReadme(false);
 	};
 
 	return (
 		<motion.div
 			id={id}
 			variants={cardVariants}
-			className="bento-card col-span-4 flex flex-col gap-5 overflow-hidden"
-			style={{ minHeight: "550px" }}
+			{...(selectedProject ? {} : cardHoverProps)}
+			className="bento-card bento-card--brand-blue bento-col-4 flex flex-col gap-5 overflow-visible"
 		>
-			{/* Top Header Selector */}
-			<div className="flex justify-between items-center pb-2.5 border-b border-[var(--border-default)] select-none">
+			<div className="flex justify-between items-center pb-2.5 border-b border-[var(--border-brand-blue)] select-none">
 				<h2 className="text-[15.5px] font-bold uppercase tracking-wider text-primary">
 					{t.sections.projects}
 				</h2>
@@ -590,32 +1205,44 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 				</span>
 			</div>
 
-			{/* Split Navigation layout */}
 			<div className="flex-1 flex flex-col md:flex-row gap-6">
-				{/* Sidebar list selection */}
-				<div className="w-full md:w-[240px] flex-shrink-0 flex flex-col gap-4">
-					<div className="flex bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-lg p-0.5 w-full select-none">
+				<div className="w-full md:w-[220px] lg:w-[240px] flex-shrink-0 flex flex-col gap-4">
+					<div className="flex bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg p-0.5 w-full select-none relative">
 						<button
 							type="button"
 							onClick={() => handleTabChange("open-source")}
-							className={`flex-1 py-1.5 rounded-md text-[12.5px] font-bold cursor-pointer transition-colors ${
-								activeTab === "open-source"
-									? "bg-[var(--accent)] text-[var(--accent-text)]"
-									: "text-secondary hover:text-primary"
-							}`}
+							className="relative flex-1 py-1.5 text-[12.5px] font-bold cursor-pointer text-center flex items-center justify-center"
 						>
-							{t.projects.openSourceTab}
+							{activeTab === "open-source" && (
+								<motion.div
+									layoutId="activeProjectCategoryBackground"
+									className="absolute inset-0 bg-[var(--accent)] rounded-md z-0"
+									transition={{ type: "spring", stiffness: 380, damping: 30 }}
+								/>
+							)}
+							<span
+								className={`relative z-10 transition-colors ${activeTab === "open-source" ? "text-[var(--accent-text)]" : "text-secondary hover:text-primary"}`}
+							>
+								{t.projects.openSourceTab}
+							</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => handleTabChange("private")}
-							className={`flex-1 py-1.5 rounded-md text-[12.5px] font-bold cursor-pointer transition-colors flex items-center justify-center gap-1 ${
-								activeTab === "private"
-									? "bg-[var(--accent)] text-[var(--accent-text)]"
-									: "text-secondary hover:text-primary"
-							}`}
+							className="relative flex-1 py-1.5 text-[12.5px] font-bold cursor-pointer text-center flex items-center justify-center gap-1"
 						>
-							{t.projects.privateTab}
+							{activeTab === "private" && (
+								<motion.div
+									layoutId="activeProjectCategoryBackground"
+									className="absolute inset-0 bg-[var(--accent)] rounded-md z-0"
+									transition={{ type: "spring", stiffness: 380, damping: 30 }}
+								/>
+							)}
+							<span
+								className={`relative z-10 transition-colors flex items-center justify-center gap-1 ${activeTab === "private" ? "text-[var(--accent-text)]" : "text-secondary hover:text-primary"}`}
+							>
+								{t.projects.privateTab}
+							</span>
 						</button>
 					</div>
 
@@ -623,17 +1250,16 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 						activeProjects={activeProjects}
 						activeProjectId={activeProjectId}
 						lang={lang}
-						onSelect={(id, name) => {
-							setActiveProjectId(id);
+						onSelect={(projectId, name) => {
+							setActiveProjectId(projectId);
 							track.projectClicked(name);
 						}}
 					/>
 				</div>
 
-				<div className="hidden md:block w-[0.5px] bg-[var(--border-default)] self-stretch" />
+				<div className="hidden md:block w-[0.5px] bg-[var(--border-brand-blue)] self-stretch" />
 
-				{/* Bento preview box details */}
-				<div className="flex-1 flex flex-col gap-3 min-h-[450px]">
+				<div className="flex-1 flex flex-col gap-3 min-h-0 md:min-h-[400px]">
 					<AnimatePresence mode="wait">
 						<motion.div
 							key={currentActiveProject.id}
@@ -645,128 +1271,23 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 							<ProjectBentoPreview
 								project={currentActiveProject}
 								lang={lang}
-								mediaTab={mediaTab}
-								setMediaTab={setMediaTab}
 								onOpenReadme={handleOpenReadme}
-								onImageClick={(images, index) => {
-									setLightboxImages(images);
-									setLightboxIndex(index);
-								}}
+								showReadme={currentProjectHasReadme}
+								readmeLabel={currentReadmeLabel}
 							/>
 						</motion.div>
 					</AnimatePresence>
 				</div>
 			</div>
 
-			{/* Full Screen README Modal Overlay */}
-			<AnimatePresence>
-				{selectedProject && (
-					<div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 md:p-8">
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95, y: 15 }}
-							animate={{ opacity: 1, scale: 1, y: 0 }}
-							exit={{ opacity: 0, scale: 0.95, y: 15 }}
-							transition={{ duration: 0.25, ease: "easeOut" }}
-							className="bg-[var(--bg-card)] border border-[var(--border-hover)] rounded-xl w-full max-w-[800px] h-[80vh] flex flex-col overflow-hidden shadow-2xl relative"
-						>
-							<div className="flex items-center justify-between px-6 py-4.5 border-b border-[var(--border-default)] select-none">
-								<div className="flex items-center gap-2">
-									<BookOpen size={18} className="text-secondary" />
-									<span className="font-mono text-[14.5px] font-bold text-primary">
-										{selectedProject.name} —{" "}
-										{selectedProject.readmeUrl ? "README.md" : "DOCUMENTACIÓN"}
-									</span>
-								</div>
-								<button
-									type="button"
-									onClick={() => setSelectedProject(null)}
-									className="text-secondary hover:text-primary p-1.5 rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
-								>
-									<X size={18} />
-								</button>
-							</div>
-
-							<div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
-								{loadingReadme ? (
-									<div className="w-full h-full flex flex-col items-center justify-center gap-3 select-none">
-										<div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-default)] border-t-[var(--accent-light)] animate-spin" />
-										<span className="font-mono text-[13px] text-secondary">
-											{lang === "es"
-												? "Cargando archivo..."
-												: "Loading document..."}
-										</span>
-									</div>
-								) : (
-									<MarkdownRenderer content={readmeText} />
-								)}
-							</div>
-						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
-
-			{/* Image Lightbox Modal Overlay */}
-			<AnimatePresence>
-				{lightboxIndex !== -1 && (
-					// biome-ignore lint/a11y/useKeyWithClickEvents: Escape key handles keyboard dismissal
-					// biome-ignore lint/a11y/noStaticElementInteractions: Click on backdrop dismisses modal
-					<div
-						className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out select-none"
-						onClick={() => setLightboxIndex(-1)}
-					>
-						<motion.div
-							initial={{ opacity: 0, scale: 0.95 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.95 }}
-							transition={{ duration: 0.2, ease: "easeOut" }}
-							className="relative max-w-full max-h-full flex items-center justify-center"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<img
-								src={lightboxImages[lightboxIndex]}
-								alt="Project mockup full size"
-								className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg border border-white/10 shadow-2xl"
-							/>
-							<button
-								type="button"
-								onClick={() => setLightboxIndex(-1)}
-								className="absolute -top-12 right-0 text-white/85 hover:text-white p-2 rounded-lg bg-black/40 hover:bg-black/65 transition-colors cursor-pointer"
-							>
-								<X size={20} />
-							</button>
-
-							{lightboxImages.length > 1 && (
-								<>
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											setLightboxIndex((prev) =>
-												prev === 0 ? lightboxImages.length - 1 : prev - 1,
-											);
-										}}
-										className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 border border-white/10 hover:bg-black/80 flex items-center justify-center text-white cursor-pointer select-none transition-colors"
-									>
-										<ChevronLeft size={20} />
-									</button>
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											setLightboxIndex((prev) =>
-												prev === lightboxImages.length - 1 ? 0 : prev + 1,
-											);
-										}}
-										className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/55 border border-white/10 hover:bg-black/80 flex items-center justify-center text-white cursor-pointer select-none transition-colors"
-									>
-										<ChevronRight size={20} />
-									</button>
-								</>
-							)}
-						</motion.div>
-					</div>
-				)}
-			</AnimatePresence>
+			<ReadmeModal
+				project={selectedProject}
+				readme={selectedReadme}
+				readmeText={readmeText}
+				loading={loadingReadme}
+				lang={lang}
+				onClose={() => setSelectedProject(null)}
+			/>
 		</motion.div>
 	);
 };
