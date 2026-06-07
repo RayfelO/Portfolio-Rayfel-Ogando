@@ -31,12 +31,12 @@ const TranslationSchema = z.object({
 	}),
 	certifications: z.object({
 		showCredential: z.string(),
-		noCredentialId: z.string(),
 	}),
 	contactModal: z.object({
 		title: z.string(),
 		subtitle: z.string(),
 		reasons: z.array(z.string()),
+		namePlaceholder: z.string(),
 		emailPlaceholder: z.string(),
 		messagePlaceholder: z.string(),
 		submitButton: z.string(),
@@ -80,18 +80,18 @@ export const translations = {
 		},
 		certifications: {
 			showCredential: "View Credential",
-			noCredentialId: "Academic Specialization",
 		},
 		contactModal: {
 			title: "Nice to meet you",
 			subtitle:
-				"Please select the reason for your inquiry, leave your message, and I'll get back to you as soon as possible.",
+				"Pick what this is about, leave a short message, and I'll get back to you as soon as possible.",
 			reasons: ["Job offer", "Collaboration", "Other"],
+			namePlaceholder: "Your name",
 			emailPlaceholder: "Email address",
-			messagePlaceholder: "Message",
+			messagePlaceholder: "What would you like to discuss?",
 			submitButton: "Send message",
 			submittingButton: "Sending...",
-			successMessage: "Message sent! I'll get back to you soon.",
+			successMessage: "Message sent. I'll get back to you soon.",
 			errorMessage: "Something went wrong. Please try again.",
 		},
 	},
@@ -126,15 +126,15 @@ export const translations = {
 		},
 		certifications: {
 			showCredential: "Ver Credential",
-			noCredentialId: "Especialización Académica",
 		},
 		contactModal: {
-			title: "Encantado de saber de ti",
+			title: "Un gusto saber de ti",
 			subtitle:
-				"Por favor, selecciona el motivo de tu consulta, deja tu mensaje, y te responderé a la mayor brevedad.",
+				"Elige el motivo, deja un mensaje breve y te responderé lo antes posible.",
 			reasons: ["Oferta de trabajo", "Colaboración", "Otro"],
+			namePlaceholder: "Tu nombre",
 			emailPlaceholder: "Correo electrónico",
-			messagePlaceholder: "Mensaje",
+			messagePlaceholder: "¿Qué te gustaría conversar?",
 			submitButton: "Enviar mensaje",
 			submittingButton: "Enviando...",
 			successMessage: "¡Mensaje enviado! Te responderé pronto.",
