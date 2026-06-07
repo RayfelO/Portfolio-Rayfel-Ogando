@@ -1,7 +1,9 @@
 export interface ContactData {
+	name: string;
 	reason: string;
 	email: string;
 	message: string;
+	website: string;
 }
 
 export const sendContactMessage = async (
