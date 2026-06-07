@@ -1,24 +1,21 @@
 {
-  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
-  "ignorePatterns": [
-    "**/*.generated.ts",
-    "dist/**",
-    "node_modules/**",
-    "api/**"
-  ],
-  "ignoreExportsUsedInFile": true,
-  "rules": {
-    "unused-files": "error",
-    "unused-exports": "warn",
-    "circular-dependencies": "error",
-    "unused-dependencies": "warn"
-  },
-  "ignoreDependencies": [
-    "resend",
-    "@vercel/node"
-  ],
-  "health": {
-    "maxCyclomatic": 15,
-    "maxCognitive": 12
-  }
+	"$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+	"ignorePatterns": [
+		"**/*.generated.ts",
+		"dist/**",
+		"node_modules/**",
+		"api/**"
+	],
+	"ignoreExportsUsedInFile": true,
+	"rules": {
+		"unused-files": "error",
+		"unused-exports": "warn",
+		"circular-dependencies": "error",
+		"unused-dependencies": "warn"
+	},
+	"ignoreDependencies": ["resend", "@vercel/node"],
+	"health": {
+		"maxCyclomatic": 15,
+		"maxCognitive": 12
+	}
 }
