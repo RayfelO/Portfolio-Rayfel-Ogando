@@ -48,12 +48,14 @@ interface ContactCardProps {
 	t: Translations;
 	lang: "en" | "es";
 	onOpenModal: () => void;
+	className?: string;
 }
 
 export const ContactCard: React.FC<ContactCardProps> = ({
 	t,
 	lang,
 	onOpenModal,
+	className,
 }) => {
 	const handleGithubClick = () => {
 		track.contactClicked("github");
@@ -76,7 +78,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
 		<motion.div
 			variants={cardVariants}
 			{...cardHoverProps}
-			className="bento-card bento-col-1 flex flex-col gap-4 justify-between min-[581px]:min-h-[180px] min-[900px]:min-h-[260px]"
+			className={`bento-card bento-col-1 flex flex-col gap-4 justify-between min-[581px]:min-h-[180px] min-[900px]:min-h-[260px] ${className || ""}`}
 		>
 			{/* Header */}
 			<div className="select-none">

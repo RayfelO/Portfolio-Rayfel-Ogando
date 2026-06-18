@@ -20,6 +20,7 @@ interface ProjectsCardProps {
 	id?: string;
 	t: Translations;
 	lang: "en" | "es";
+	className?: string;
 }
 
 type TabType = "open-source" | "private";
@@ -136,8 +137,7 @@ const imageSizesByProject: Record<
 const mediaTileBase =
 	"group relative overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-subtle)]/30 transition-all duration-200 hover:border-[var(--border-hover)]";
 
-const mediaTileOverlay =
-	"absolute inset-0 bg-gradient-to-t from-black/72 via-black/18 to-transparent";
+const mediaTileOverlay = "projects-media-overlay";
 
 const getProjectDateText = (project: Project, lang: "en" | "es") => {
 	const start = lang === "es" ? project.startDateEs : project.startDateEn;
@@ -598,6 +598,7 @@ const VideoHeroTile: React.FC<{
 					autoplay
 					showControls={false}
 					className="pointer-events-none"
+					fit="cover"
 				/>
 				<div className={mediaTileOverlay} />
 				<div className="absolute right-3 bottom-3 rounded-full bg-black/55 backdrop-blur-sm border border-white/10 p-2 text-white/90">
@@ -843,7 +844,10 @@ const ReadmeModal: React.FC<ReadmeModalProps> = ({
 						</button>
 					</div>
 
-					<div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar">
+					<div
+						data-lenis-prevent
+						className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar"
+					>
 						{loading ? (
 							<div className="w-full h-full flex flex-col items-center justify-center gap-3 select-none">
 								<div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-default)] border-t-[var(--accent-light)] animate-spin" />
@@ -910,8 +914,8 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 						}
 						className={
 							isMobile
-								? "absolute inset-0 bg-[var(--bg-card)] border border-[var(--border-hover)] rounded-xl -z-0"
-								: "absolute inset-0 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg -z-0"
+								? "absolute inset-0 bg-[var(--bg-card)] border border-[var(--projects-index-highlight-border)] rounded-xl -z-0"
+								: "absolute inset-0 bg-[var(--bg-card)] border border-[var(--projects-index-highlight-border)] rounded-lg -z-0"
 						}
 						transition={{ type: "spring", stiffness: 350, damping: 30 }}
 					/>
@@ -926,15 +930,15 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 					<span
 						className={
 							isMobile
-								? `w-1.5 h-1.5 rounded-full transition-all ${
+								? `w-1.5 h-1.5 rounded-full border projects-index-dot ${
 										active
-											? "bg-[var(--accent-brand)] scale-110"
-											: "border border-[var(--border-default)]"
+											? "bg-[var(--accent-brand)] border-[var(--accent-brand)] scale-110"
+											: "bg-transparent border-[var(--projects-index-dot-border)]"
 									}`
-								: `w-2 h-2 rounded-full flex-shrink-0 transition-all ${
+								: `w-2 h-2 rounded-full flex-shrink-0 border projects-index-dot ${
 										active
-											? "bg-[var(--accent-brand)] scale-110 shadow-[0_0_8px_rgba(43,69,136,0.55)]"
-											: "border border-[var(--border-default)]"
+											? "bg-[var(--accent-brand)] border-[var(--accent-brand)] scale-110 shadow-[0_0_8px_rgba(43,69,136,0.55)]"
+											: "bg-transparent border-[var(--projects-index-dot-border)]"
 									}`
 						}
 					/>
@@ -1063,7 +1067,12 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 	);
 };
 
-export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
+export const ProjectsCard: React.FC<ProjectsCardProps> = ({
+	id,
+	t,
+	lang,
+	className,
+}) => {
 	const [activeTab, setActiveTab] = useState<TabType>("open-source");
 	const activeProjects =
 		activeTab === "open-source" ? projects : privateProjects;
@@ -1194,9 +1203,9 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 			id={id}
 			variants={cardVariants}
 			{...(selectedProject ? {} : cardHoverProps)}
-			className="bento-card bento-card--brand-blue bento-col-4 flex flex-col gap-5 overflow-visible"
+			className={`bento-card bento-card--brand-blue bento-col-4 flex flex-col gap-5 overflow-visible ${className || ""}`}
 		>
-			<div className="flex justify-between items-center pb-2.5 border-b border-[var(--border-brand-blue)] select-none">
+			<div className="flex justify-between items-center pb-2.5 border-b border-[var(--projects-card-border)] select-none">
 				<h2 className="text-[15.5px] font-bold uppercase tracking-wider text-primary">
 					{t.sections.projects}
 				</h2>
@@ -1257,7 +1266,7 @@ export const ProjectsCard: React.FC<ProjectsCardProps> = ({ id, t, lang }) => {
 					/>
 				</div>
 
-				<div className="hidden md:block w-[0.5px] bg-[var(--border-brand-blue)] self-stretch" />
+				<div className="hidden md:block w-[0.5px] bg-[var(--projects-card-border)] self-stretch" />
 
 				<div className="flex-1 flex flex-col gap-3 min-h-0 md:min-h-[400px]">
 					<AnimatePresence mode="wait">

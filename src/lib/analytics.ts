@@ -20,8 +20,6 @@ export const track = {
 		posthog.capture("language_changed", { to }),
 	themeChanged: (to: "dark" | "light") =>
 		posthog.capture("theme_changed", { to }),
-	projectPreviewViewed: (name: string, index: number) =>
-		posthog.capture("project_preview_viewed", { project: name, index }),
 	contactModalOpened: () => posthog.capture("contact_modal_opened"),
 	contactFormSubmitted: (reason: string) =>
 		posthog.capture("contact_form_submitted", { reason }),

@@ -23,6 +23,7 @@ interface TechStackCardProps {
 	id?: string;
 	t: Translations;
 	lang: "en" | "es";
+	className?: string;
 }
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -45,6 +46,7 @@ export const TechStackCard: React.FC<TechStackCardProps> = ({
 	id,
 	t,
 	lang,
+	className,
 }) => {
 	const handleTechClick = (name: string) => {
 		track.contactClicked(`tech_${name.toLowerCase()}`);
@@ -55,7 +57,7 @@ export const TechStackCard: React.FC<TechStackCardProps> = ({
 			id={id}
 			variants={cardVariants}
 			{...cardHoverProps}
-			className="bento-card bento-col-2 flex flex-col gap-5 justify-between"
+			className={`bento-card bento-col-2 flex flex-col gap-5 justify-between ${className || ""}`}
 		>
 			{/* Header */}
 			<div className="select-none pb-2 border-b border-[var(--border-default)]">

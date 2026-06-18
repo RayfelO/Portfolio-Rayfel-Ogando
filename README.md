@@ -38,6 +38,7 @@ Portafolio personal construido con React + TypeScript y Vite. La aplicacion mues
 | Build Tool | Vite | 8.0.12 con plugin de Tailwind |
 | Estilos | Tailwind CSS | v4 basado en CSS, sin config JS |
 | Animaciones | Motion (motion.dev) | v12, animaciones por componente |
+| Scroll | Lenis | v1.3.23, smooth scrolling / scroll orchestration |
 | Validacion | Zod | v4.4.3, runtime y esquemas de datos |
 | Analytics | PostHog | v1.379.2, captura manual |
 | Email | Resend | v6.12.4, serverless function |

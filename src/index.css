@@ -5,13 +5,13 @@
 
 :root {
 	/* ─── DARK MODE (default) ─── */
-	--bg-base: #08090a; /* Fondo principal */
-	--bg-card: #0f1012; /* Cards */
-	--bg-card-hover: #141618; /* Card en hover */
-	--bg-subtle: #1a1c1f; /* Elementos secundarios */
+	--bg-base: #0b0d12; /* Fondo principal: azul profundo y sofisticado */
+	--bg-card: #131620; /* Cards: superficie más clara que contrasta con el fondo */
+	--bg-card-hover: #181c28; /* Card en hover */
+	--bg-subtle: #202536; /* Elementos secundarios */
 
-	--border-default: rgba(255, 255, 255, 0.06);
-	--border-hover: rgba(255, 255, 255, 0.12);
+	--border-default: rgba(124, 155, 231, 0.07); /* Borde con tinte azul sutil */
+	--border-hover: rgba(124, 155, 231, 0.14);
 	--border-accent: #283347; /* Borde con color acento sólido */
 
 	--text-primary: #f0f0f0;
@@ -33,13 +33,25 @@
 	--status-blue: #7c9be7; /* Periwinkle blue harmonized with brand blue hue */
 	--status-blue-glow: rgba(124, 155, 231, 0.45);
 
-	/* Brand blue card variables */
-	--border-brand-blue: rgba(43, 69, 136, 0.45);
-	--bg-brand-blue-gradient: linear-gradient(
+	/* Projects card variables */
+	--projects-card-border: rgba(43, 69, 136, 0.25);
+	--projects-card-border-hover: rgba(43, 69, 136, 0.45);
+	--projects-card-gradient: linear-gradient(
 		135deg,
-		rgba(43, 69, 136, 0.28) 0%,
+		rgba(43, 69, 136, 0.16) 0%,
 		var(--bg-card) 90%
 	);
+	--projects-media-shadow-from: rgba(0, 0, 0, 0.72);
+	--projects-media-shadow-via: rgba(0, 0, 0, 0.18);
+	--projects-media-shadow-to: transparent;
+	--projects-media-shadow: linear-gradient(
+		to top,
+		var(--projects-media-shadow-from) 0%,
+		var(--projects-media-shadow-via) 50%,
+		var(--projects-media-shadow-to) 100%
+	);
+	--projects-index-dot-border: #202536;
+	--projects-index-highlight-border: rgba(43, 69, 136, 0.12);
 
 	/* Avatar game tokens */
 	--game-overlay-start: rgba(43, 69, 136, 0.72);
@@ -96,13 +108,25 @@
 	--status-blue: #385fb8; /* Medium slate blue para visibilidad */
 	--status-blue-glow: rgba(56, 95, 184, 0.35);
 
-	/* Brand blue card variables (light mode) */
-	--border-brand-blue: rgba(43, 69, 136, 0.22);
-	--bg-brand-blue-gradient: linear-gradient(
+	/* Projects card variables (light mode) */
+	--projects-card-border: rgba(43, 69, 136, 0.12);
+	--projects-card-border-hover: rgba(43, 69, 136, 0.24);
+	--projects-card-gradient: linear-gradient(
 		135deg,
-		rgba(43, 69, 136, 0.08) 0%,
+		rgba(43, 69, 136, 0.04) 0%,
 		var(--bg-card) 90%
 	);
+	--projects-media-shadow-from: rgba(0, 0, 0, 0.08);
+	--projects-media-shadow-via: rgba(0, 0, 0, 0.02);
+	--projects-media-shadow-to: transparent;
+	--projects-media-shadow: linear-gradient(
+		to top,
+		var(--projects-media-shadow-from) 0%,
+		var(--projects-media-shadow-via) 50%,
+		var(--projects-media-shadow-to) 100%
+	);
+	--projects-index-dot-border: rgba(0, 0, 0, 0.14);
+	--projects-index-highlight-border: rgba(0, 0, 0, 0.06);
 
 	/* Avatar game tokens (light mode) */
 	--game-overlay-start: rgba(255, 255, 255, 0.96);
@@ -159,25 +183,6 @@ body {
 	.cursor-zoom-in,
 	.cursor-zoom-out {
 		cursor: none;
-	}
-}
-
-@media (min-width: 768px) {
-	body.glightbox-open,
-	body.glightbox-open .glightbox-container,
-	body.glightbox-open .glightbox-container *,
-	body.glightbox-open .gbtn,
-	body.glightbox-open .gslide,
-	body.glightbox-open .gslide-media,
-	body.glightbox-open .gslide-image img,
-	body.glightbox-open iframe,
-	body.glightbox-open video,
-	body.glightbox-open button {
-		cursor: auto;
-	}
-
-	body.glightbox-open .custom-cursor {
-		opacity: 0 !important;
 	}
 }
 
@@ -256,6 +261,26 @@ body {
 	max-height: 100%;
 }
 
+@media (min-width: 768px) {
+	body.glightbox-open,
+	body.glightbox-open .glightbox-container,
+	body.glightbox-open .glightbox-container *,
+	body.glightbox-open .gbtn,
+	body.glightbox-open .gslide,
+	body.glightbox-open .gslide-media,
+	body.glightbox-open .gslide-image img,
+	body.glightbox-open iframe,
+	body.glightbox-open video,
+	body.glightbox-open button {
+		cursor: auto;
+	}
+
+	body.glightbox-open .custom-cursor {
+		/* biome-ignore lint/complexity/noImportantStyles: force hide custom cursor when lightbox is open */
+		opacity: 0 !important;
+	}
+}
+
 /* Mono typography class */
 .font-mono {
 	font-family: "Geist Mono", "JetBrains Mono", "Fira Code", monospace;
@@ -290,13 +315,27 @@ body {
 
 /* Card grande con acento azul de marca — solo usar en ProjectsCard */
 .bento-card--brand-blue {
-	border-color: var(--border-brand-blue);
-	background: var(--bg-brand-blue-gradient);
+	border-color: var(--projects-card-border);
+	background: var(--projects-card-gradient);
 }
 
 .bento-card--brand-blue:hover {
-	border-color: rgba(43, 69, 136, 0.6);
-	background: var(--bg-brand-blue-gradient);
+	border-color: var(--projects-card-border-hover);
+	background: var(--projects-card-gradient);
+}
+
+.projects-media-overlay {
+	position: absolute;
+	inset: 0;
+	background: var(--projects-media-shadow);
+	pointer-events: none;
+	transition: all 0.2s ease-in-out;
+}
+
+.projects-index-dot {
+	transition-property: background-color, border-color, transform, box-shadow;
+	transition-duration: 150ms;
+	transition-timing-function: ease-in-out;
 }
 
 /* Bento Grid Wrapper */
@@ -530,7 +569,25 @@ body {
 	}
 }
 
-.certs-scroll-fade {
-	-webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-	mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+@media (min-width: 900px) {
+	.certs-scroll-fade {
+		-webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+		mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+	}
+}
+
+/* Centralized theme switching transition override */
+.theme-switching,
+.theme-switching :not(.glightbox-container):not(.glightbox-container *),
+.theme-switching ::before,
+.theme-switching ::after {
+	/* biome-ignore lint/complexity/noImportantStyles: delay override required for theme transitions */
+	transition-delay: 0s !important;
+	/* biome-ignore lint/complexity/noImportantStyles: duration override required for theme transitions */
+	transition-duration: 150ms !important;
+	transition-property:
+/* biome-ignore lint/complexity/noImportantStyles: property override required for theme transitions */
+		background-color, color, border-color, box-shadow !important;
+	/* biome-ignore lint/complexity/noImportantStyles: timing override required for theme transitions */
+	transition-timing-function: ease-in-out !important;
 }

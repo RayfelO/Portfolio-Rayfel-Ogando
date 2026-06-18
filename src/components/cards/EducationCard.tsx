@@ -9,19 +9,21 @@ interface EducationCardProps {
 	id?: string;
 	t: Translations;
 	lang: "en" | "es";
+	className?: string;
 }
 
 export const EducationCard: React.FC<EducationCardProps> = ({
 	id,
 	t,
 	lang,
+	className,
 }) => {
 	return (
 		<motion.div
 			id={id}
 			variants={cardVariants}
 			{...cardHoverProps}
-			className="bento-card bento-col-2 flex flex-col gap-4 justify-between overflow-visible"
+			className={`bento-card bento-col-2 flex flex-col gap-4 justify-between overflow-visible ${className || ""}`}
 		>
 			{/* Header */}
 			<div className="select-none flex justify-between items-center pb-2 border-b border-[var(--border-default)]">

@@ -1,6 +1,7 @@
+import { useLenis } from "lenis/react";
 import { motion } from "motion/react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Translations } from "../../i18n/translations";
 
 interface NavigationIndexProps {
@@ -12,7 +13,9 @@ export const NavigationIndex: React.FC<NavigationIndexProps> = ({
 	t,
 	lang,
 }) => {
+	const lenis = useLenis();
 	const [activeSections, setActiveSections] = useState<string[]>(["inicio"]);
+	const intersectionMapRef = useRef<Record<string, boolean>>({});
 
 	const sections = useMemo(
 		() => [
@@ -27,60 +30,57 @@ export const NavigationIndex: React.FC<NavigationIndexProps> = ({
 	);
 
 	useEffect(() => {
-		// fallow-ignore-next-line complexity
-		const handleScroll = () => {
-			const visibleSections: string[] = [];
+		const map = intersectionMapRef.current;
+		// Initialize map status
+		for (const sec of sections) {
+			map[sec.id] = sec.id === "inicio";
+		}
 
-			for (const sec of sections) {
-				const element = document.getElementById(sec.id);
-				if (element) {
-					const rect = element.getBoundingClientRect();
-					// A section is active if it lies in the viewport's active area (top in the upper 55%, bottom below header)
-					if (rect.top < window.innerHeight * 0.55 && rect.bottom > 130) {
-						visibleSections.push(sec.id);
-					}
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					map[entry.target.id] = entry.isIntersecting;
 				}
-			}
 
-			if (visibleSections.length === 0) {
-				// Fallback to the single closest section to the active viewport line
-				let closestSection = "inicio";
-				let minDistance = Number.POSITIVE_INFINITY;
+				const nextActive = sections
+					.filter((sec) => map[sec.id])
+					.map((sec) => sec.id);
 
-				for (const sec of sections) {
-					const element = document.getElementById(sec.id);
-					if (element) {
-						const rect = element.getBoundingClientRect();
-						const distance = Math.abs(rect.top - 120);
-						if (distance < minDistance) {
-							minDistance = distance;
-							closestSection = sec.id;
-						}
-					}
+				if (nextActive.length > 0) {
+					setActiveSections((prev) => {
+						const isSame =
+							prev.length === nextActive.length &&
+							prev.every((val, index) => val === nextActive[index]);
+						return isSame ? prev : nextActive;
+					});
 				}
-				setActiveSections([closestSection]);
-			} else {
-				setActiveSections(visibleSections);
+			},
+			{
+				rootMargin: "-120px 0px -45% 0px",
+				threshold: 0,
+			},
+		);
+
+		for (const sec of sections) {
+			const el = document.getElementById(sec.id);
+			if (el) {
+				observer.observe(el);
 			}
-		};
-
-		window.addEventListener("scroll", handleScroll, { passive: true });
-		// Run once on mount to capture initial state
-		handleScroll();
-
-		// Fallback to trigger scroll spy on mount after brief timeout (DOM rendering)
-		const timer = setTimeout(handleScroll, 100);
+		}
 
 		return () => {
-			window.removeEventListener("scroll", handleScroll);
-			clearTimeout(timer);
+			observer.disconnect();
 		};
 	}, [sections]);
 
 	const scrollToSection = (id: string) => {
 		const element = document.getElementById(id);
 		if (element) {
-			element.scrollIntoView({ behavior: "smooth", block: "center" });
+			if (lenis) {
+				lenis.scrollTo(element, { offset: -80 });
+			} else {
+				element.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
 		}
 	};
 

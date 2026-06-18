@@ -7,6 +7,7 @@ import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
 interface AvatarCardProps {
 	id?: string;
 	lang: "en" | "es";
+	className?: string;
 }
 
 type CellValue = "X" | "O" | null;
@@ -177,7 +178,11 @@ const getResultOverlayCopy = (result: GameResult, lang: "en" | "es") => {
 	}
 };
 
-export const AvatarCard: React.FC<AvatarCardProps> = ({ id, lang }) => {
+export const AvatarCard: React.FC<AvatarCardProps> = ({
+	id,
+	lang,
+	className,
+}) => {
 	const [isGameOpen, setIsGameOpen] = useState(false);
 	const [board, setBoard] = useState<CellValue[]>(() => createEmptyBoard());
 	const [result, setResult] = useState<GameResult>(null);
@@ -261,7 +266,7 @@ export const AvatarCard: React.FC<AvatarCardProps> = ({ id, lang }) => {
 			id={id}
 			variants={cardVariants}
 			{...cardHoverProps}
-			className="bento-card bento-col-1 relative overflow-hidden p-0 border border-[var(--border-default)] hover:border-[var(--border-hover)] group min-[581px]:min-h-[180px] min-[900px]:min-h-[260px] max-[580px]:w-[min(100%,340px)] max-[580px]:justify-self-center max-[580px]:aspect-square max-[580px]:min-h-0"
+			className={`bento-card bento-col-1 relative overflow-hidden p-0 border border-[var(--border-default)] hover:border-[var(--border-hover)] group min-[581px]:min-h-[180px] min-[900px]:min-h-[260px] max-[580px]:w-[min(100%,340px)] max-[580px]:justify-self-center max-[580px]:aspect-square max-[580px]:min-h-0 ${className || ""}`}
 		>
 			<motion.button
 				type="button"

@@ -17,7 +17,11 @@ export const getInitialTheme = (): Theme => {
 export const applyTheme = (theme: Theme) => {
 	if (typeof window !== "undefined") {
 		const root = window.document.documentElement;
+		root.classList.add("theme-switching");
 		root.setAttribute("data-theme", theme);
 		window.localStorage.setItem("theme", theme);
+		setTimeout(() => {
+			root.classList.remove("theme-switching");
+		}, 200);
 	}
 };

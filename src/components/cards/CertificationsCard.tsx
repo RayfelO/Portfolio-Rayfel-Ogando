@@ -11,6 +11,7 @@ interface CertificationsCardProps {
 	id?: string;
 	t: Translations;
 	lang: "en" | "es";
+	className?: string;
 }
 
 const getCertIcon = (id: string, issuer: string) => {
@@ -29,13 +30,14 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 	id,
 	t,
 	lang,
+	className,
 }) => {
 	return (
 		<motion.div
 			id={id}
 			variants={cardVariants}
 			{...cardHoverProps}
-			className="bento-card bento-col-2 flex flex-col gap-4 justify-between max-h-[440px] sm:max-h-[360px]"
+			className={`bento-card bento-col-2 flex flex-col gap-4 justify-between min-[900px]:max-h-[360px] ${className || ""}`}
 		>
 			{/* Header */}
 			<div className="select-none flex justify-between items-center pb-2 border-b border-[var(--border-default)]">
@@ -46,7 +48,7 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 			</div>
 
 			{/* List Container without scrollbar visual */}
-			<div className="certs-scroll-fade flex-1 overflow-y-auto pr-1 flex flex-col gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div className="certs-scroll-fade flex-1 overflow-visible min-[900px]:overflow-y-auto pr-1 flex flex-col gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 				{certifications.map((cert) => {
 					const name = lang === "es" ? cert.nameEs : cert.nameEn;
 					const date = lang === "es" ? cert.dateEs : cert.dateEn;
@@ -64,13 +66,13 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 							{/* Right: Content details */}
 							<div className="flex-1 flex flex-col gap-0.5">
 								<div className="flex justify-between items-start gap-3">
-									<span className="text-[14.5px] font-semibold text-primary leading-snug group-hover/cert:text-[var(--accent-text)] transition-all duration-150">
+									<span className="text-[14.5px] font-semibold text-primary leading-snug group-hover/cert:text-[var(--status-blue)] transition-all duration-150">
 										{name}
 									</span>
 									{cert.url && (
 										<ExternalLink
 											size={12}
-											className="text-secondary opacity-60 group-hover/cert:opacity-100 group-hover/cert:text-[var(--accent-text)] group-hover/cert:translate-x-0.5 group-hover/cert:-translate-y-0.5 transition-all flex-shrink-0 mt-0.5"
+											className="text-secondary opacity-60 group-hover/cert:opacity-100 group-hover/cert:text-[var(--status-blue)] group-hover/cert:translate-x-0.5 group-hover/cert:-translate-y-0.5 transition-all flex-shrink-0 mt-0.5"
 										/>
 									)}
 								</div>

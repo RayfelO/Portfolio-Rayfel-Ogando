@@ -33,9 +33,11 @@ export const Header: React.FC<HeaderProps> = ({
 		<header className="sticky top-0 z-40 w-full max-w-[1100px] mx-auto py-4 sm:py-6 px-4 flex justify-between items-center select-none backdrop-blur-[10px] bg-[var(--bg-base)]/80">
 			{/* Minimalist Logo */}
 			<div className="flex items-center gap-2">
-				<span className="font-mono text-[13px] font-semibold tracking-wider text-primary bg-[var(--bg-subtle)] px-2.5 py-1.5 rounded-md border border-[var(--border-default)]">
-					RO
-				</span>
+				<img
+					src="/vite.svg"
+					alt="Logo"
+					className="w-6 h-6 object-contain select-none flex-shrink-0"
+				/>
 				<span className="text-[12px] font-mono tracking-tight text-secondary hidden sm:inline-block">
 					rayfelo.dev
 				</span>

@@ -6,9 +6,10 @@ import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
 
 interface HeroCardProps {
 	t: Translations;
+	className?: string;
 }
 
-export const HeroCard: React.FC<HeroCardProps> = ({ t }) => {
+export const HeroCard: React.FC<HeroCardProps> = ({ t, className }) => {
 	const [typedRole, setTypedRole] = useState("");
 	const fullRole = t.hero.role;
 
@@ -44,7 +45,7 @@ export const HeroCard: React.FC<HeroCardProps> = ({ t }) => {
 		<motion.div
 			variants={cardVariants}
 			{...cardHoverProps}
-			className="bento-card bento-card--accent bento-col-2 flex flex-col justify-between items-start gap-4"
+			className={`bento-card bento-card--accent bento-col-2 flex flex-col justify-between items-start gap-4 ${className || ""}`}
 		>
 			<div className="flex flex-col gap-4 w-full">
 				{/* Top: Name and Role */}
