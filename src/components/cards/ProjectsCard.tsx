@@ -5,16 +5,17 @@ import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
 import { type Project, privateProjects, projects } from "../../data/portfolio";
 import type { Translations } from "../../i18n/translations";
 import { track } from "../../lib/analytics";
 import { GithubIcon } from "../icons/GithubIcon";
 import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
+import { LoadingMedia } from "../media/LoadingMedia";
 import { OptimizedYouTubePlayer } from "../OptimizedYouTubePlayer";
+import {
+	MarkdownRenderer,
+	type ResolvedReadme,
+} from "../projects/MarkdownRenderer";
 
 interface ProjectsCardProps {
 	id?: string;
@@ -41,53 +42,6 @@ interface GallerySlide {
 	width: number;
 	height: number;
 }
-
-interface ResolvedReadme {
-	rawUrl: string;
-	rawBaseUrl: string;
-	blobBaseUrl: string;
-	source: "remote" | "embedded";
-}
-
-const readmeSanitizeSchema = {
-	...defaultSchema,
-	tagNames: [...(defaultSchema.tagNames ?? []), "div", "span", "br", "img"],
-	attributes: {
-		...defaultSchema.attributes,
-		a: [...(defaultSchema.attributes?.a ?? []), "href", "title"],
-		div: [...(defaultSchema.attributes?.div ?? []), "align"],
-		h1: [...(defaultSchema.attributes?.h1 ?? []), "align"],
-		h2: [...(defaultSchema.attributes?.h2 ?? []), "align"],
-		h3: [...(defaultSchema.attributes?.h3 ?? []), "align"],
-		h4: [...(defaultSchema.attributes?.h4 ?? []), "align"],
-		h5: [...(defaultSchema.attributes?.h5 ?? []), "align"],
-		h6: [...(defaultSchema.attributes?.h6 ?? []), "align"],
-		img: [
-			...(defaultSchema.attributes?.img ?? []),
-			"src",
-			"alt",
-			"title",
-			"width",
-			"height",
-			"align",
-		],
-		p: [...(defaultSchema.attributes?.p ?? []), "align"],
-		span: [...(defaultSchema.attributes?.span ?? []), "align"],
-	},
-};
-
-const getAlignmentClassName = (align?: string) => {
-	switch (align?.toLowerCase()) {
-		case "center":
-			return "text-center";
-		case "right":
-			return "text-right";
-		case "left":
-			return "text-left";
-		default:
-			return "";
-	}
-};
 
 interface MediaItemImage {
 	kind: "image";
@@ -164,10 +118,6 @@ const getLightboxVideoUrl = (url: string) => {
 	return videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
 };
 
-const isAbsoluteUrl = (url: string) => /^[a-z][a-z\d+\-.]*:/i.test(url);
-
-const isHashLink = (url: string) => url.startsWith("#");
-
 const normalizeBaseUrl = (url: string) => (url.endsWith("/") ? url : `${url}/`);
 
 const getDirectoryPath = (path: string) => {
@@ -194,92 +144,98 @@ const parseGithubRepo = (githubUrl: string) => {
 	}
 };
 
-const buildReadmeCandidates = (project: Project): ResolvedReadme[] => {
-	const repoInfo = project.githubUrl
-		? parseGithubRepo(project.githubUrl)
-		: null;
+const createReadmeCandidate = (
+	owner: string,
+	repo: string,
+	branch: string,
+	directory: string,
+	rawUrl: string,
+): ResolvedReadme => ({
+	rawUrl,
+	rawBaseUrl: normalizeBaseUrl(
+		`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${directory}`,
+	),
+	blobBaseUrl: normalizeBaseUrl(
+		`https://github.com/${owner}/${repo}/blob/${branch}/${directory}`,
+	),
+	source: "remote",
+});
+
+const createRepoCandidate = (
+	owner: string,
+	repo: string,
+	branch: string,
+	fileName: string,
+): ResolvedReadme => ({
+	rawUrl: `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${fileName}`,
+	rawBaseUrl: normalizeBaseUrl(
+		`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/`,
+	),
+	blobBaseUrl: normalizeBaseUrl(
+		`https://github.com/${owner}/${repo}/blob/${branch}/`,
+	),
+	source: "remote",
+});
+
+const parseReadmeUrl = (readmeUrl: string): ResolvedReadme | null => {
+	try {
+		const rawUrl = new URL(readmeUrl);
+		const parts = rawUrl.pathname.split("/").filter(Boolean);
+		if (rawUrl.hostname !== "raw.githubusercontent.com" || parts.length < 4)
+			return null;
+		const [owner, repo, branch, ...pathParts] = parts;
+		const directory = getDirectoryPath(pathParts.join("/"));
+		return createReadmeCandidate(owner, repo, branch, directory, readmeUrl);
+	} catch {
+		return null;
+	}
+};
+
+const createBranchCandidates = (
+	owner: string,
+	repo: string,
+	existingCandidates: ResolvedReadme[],
+): ResolvedReadme[] => {
 	const candidates: ResolvedReadme[] = [];
-
-	if (project.readmeUrl) {
-		try {
-			const rawUrl = new URL(project.readmeUrl);
-			const parts = rawUrl.pathname.split("/").filter(Boolean);
-			if (
-				rawUrl.hostname === "raw.githubusercontent.com" &&
-				parts.length >= 4
-			) {
-				const [owner, repo, branch, ...pathParts] = parts;
-				const directory = getDirectoryPath(pathParts.join("/"));
-				candidates.push({
-					rawUrl: project.readmeUrl,
-					rawBaseUrl: normalizeBaseUrl(
-						`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${directory}`,
-					),
-					blobBaseUrl: normalizeBaseUrl(
-						`https://github.com/${owner}/${repo}/blob/${branch}/${directory}`,
-					),
-					source: "remote",
-				});
-			}
-		} catch {}
-	}
-
-	if (!repoInfo) {
-		return candidates;
-	}
-
 	for (const branch of ["main", "master"]) {
 		for (const fileName of ["README.md", "README.MD"]) {
-			const rawUrl = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${branch}/${fileName}`;
-			if (candidates.some((candidate) => candidate.rawUrl === rawUrl)) {
-				continue;
-			}
-
-			candidates.push({
-				rawUrl,
-				rawBaseUrl: normalizeBaseUrl(
-					`https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${branch}/`,
-				),
-				blobBaseUrl: normalizeBaseUrl(
-					`https://github.com/${repoInfo.owner}/${repoInfo.repo}/blob/${branch}/`,
-				),
-				source: "remote",
-			});
+			const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${fileName}`;
+			if (existingCandidates.some((c) => c.rawUrl === rawUrl)) continue;
+			candidates.push(createRepoCandidate(owner, repo, branch, fileName));
 		}
 	}
-
 	return candidates;
 };
 
+const buildReadmeCandidates = (project: Project): ResolvedReadme[] => {
+	const repoInfo = parseGithubRepo(project.githubUrl as string);
+	const parsed = project.readmeUrl ? parseReadmeUrl(project.readmeUrl) : null;
+	const candidates: ResolvedReadme[] = parsed ? [parsed] : [];
+	if (!repoInfo) return candidates;
+	candidates.push(
+		...createBranchCandidates(repoInfo.owner, repoInfo.repo, candidates),
+	);
+	return candidates;
+};
+
+const tryFetch = async (url: string, method: string, signal?: AbortSignal) => {
+	try {
+		return await fetch(url, { method, signal } as RequestInit);
+	} catch (error) {
+		if (error instanceof DOMException && error.name === "AbortError")
+			throw error;
+		return null;
+	}
+};
+
 const validateRemoteReadme = async (rawUrl: string, signal?: AbortSignal) => {
-	try {
-		const headResponse = await fetch(rawUrl, {
-			method: "HEAD",
-			signal,
-		});
-
-		if (headResponse.ok) {
-			return true;
-		}
-
-		if (headResponse.status !== 405) {
-			return false;
-		}
-	} catch (error) {
-		if (error instanceof DOMException && error.name === "AbortError") {
-			throw error;
-		}
+	const headRes = await tryFetch(rawUrl, "HEAD", signal);
+	if (headRes !== null) {
+		if (headRes.ok) return true;
+		return headRes.status === 405;
 	}
-
-	try {
-		const getResponse = await fetch(rawUrl, { signal });
-		return getResponse.ok;
-	} catch (error) {
-		if (error instanceof DOMException && error.name === "AbortError") {
-			throw error;
-		}
-		return false;
-	}
+	const getRes = await tryFetch(rawUrl, "GET", signal);
+	return getRes?.ok === true;
 };
 
 const resolveRemoteReadme = async (
@@ -293,169 +249,6 @@ const resolveRemoteReadme = async (
 	}
 
 	return null;
-};
-
-const resolveMarkdownUrl = (
-	url: string,
-	readme: ResolvedReadme | null,
-	target: "image" | "link",
-) => {
-	if (!readme || isAbsoluteUrl(url) || isHashLink(url)) {
-		return url;
-	}
-
-	const baseUrl = target === "image" ? readme.rawBaseUrl : readme.blobBaseUrl;
-	return new URL(url, baseUrl).toString();
-};
-
-const MarkdownRenderer: React.FC<{
-	content: string;
-	readme: ResolvedReadme | null;
-}> = ({ content, readme }) => {
-	const isRemoteReadme = readme?.source === "remote";
-
-	return (
-		<div className="markdown-body text-left">
-			<ReactMarkdown
-				remarkPlugins={[remarkGfm]}
-				rehypePlugins={
-					isRemoteReadme
-						? [rehypeRaw, [rehypeSanitize, readmeSanitizeSchema]]
-						: []
-				}
-				components={{
-					h1: ({ children, node }) => (
-						<h1
-							className={`text-2xl font-bold text-primary mt-6 mb-3 pb-2 border-b border-[var(--border-default)] ${getAlignmentClassName(
-								typeof node?.properties?.align === "string"
-									? node.properties.align
-									: undefined,
-							)}`}
-						>
-							{children}
-						</h1>
-					),
-					h2: ({ children, node }) => (
-						<h2
-							className={`text-xl font-bold text-primary mt-5 mb-2.5 ${getAlignmentClassName(
-								typeof node?.properties?.align === "string"
-									? node.properties.align
-									: undefined,
-							)}`}
-						>
-							{children}
-						</h2>
-					),
-					h3: ({ children, node }) => (
-						<h3
-							className={`text-lg font-semibold text-primary mt-4 mb-2 ${getAlignmentClassName(
-								typeof node?.properties?.align === "string"
-									? node.properties.align
-									: undefined,
-							)}`}
-						>
-							{children}
-						</h3>
-					),
-					p: ({ children, node }) => (
-						<p
-							className={`text-[14.5px] text-secondary leading-relaxed my-3 ${getAlignmentClassName(
-								typeof node?.properties?.align === "string"
-									? node.properties.align
-									: undefined,
-							)}`}
-						>
-							{children}
-						</p>
-					),
-					div: ({ children, node }) => (
-						<div
-							className={`text-[14.5px] text-secondary leading-relaxed my-3 ${getAlignmentClassName(
-								typeof node?.properties?.align === "string"
-									? node.properties.align
-									: undefined,
-							)}`}
-						>
-							{children}
-						</div>
-					),
-					span: ({ children }) => <span>{children}</span>,
-					br: () => <br />,
-					strong: ({ children }) => (
-						<strong className="font-bold text-primary">{children}</strong>
-					),
-					ul: ({ children }) => (
-						<ul className="my-3 space-y-1 pl-5 list-disc text-secondary">
-							{children}
-						</ul>
-					),
-					ol: ({ children }) => (
-						<ol className="my-3 space-y-1 pl-5 list-decimal text-secondary">
-							{children}
-						</ol>
-					),
-					li: ({ children }) => (
-						<li className="text-secondary leading-relaxed">{children}</li>
-					),
-					code: ({ children, className }) =>
-						className ? (
-							<code className={className}>{children}</code>
-						) : (
-							<code className="bg-[var(--bg-subtle)] border border-[var(--border-default)] px-1.5 py-0.5 rounded font-mono text-[12.5px] text-[var(--accent-text)]">
-								{children}
-							</code>
-						),
-					pre: ({ children }) => (
-						<pre className="bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-lg p-4 my-4 overflow-x-auto font-mono text-[13px] text-[var(--accent-text)]">
-							{children}
-						</pre>
-					),
-					table: ({ children }) => (
-						<div className="my-4 overflow-x-auto">
-							<table className="min-w-full border-collapse text-[14px] text-secondary">
-								{children}
-							</table>
-						</div>
-					),
-					th: ({ children }) => (
-						<th className="border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2 text-left font-semibold text-primary">
-							{children}
-						</th>
-					),
-					td: ({ children }) => (
-						<td className="border border-[var(--border-default)] px-3 py-2 align-top">
-							{children}
-						</td>
-					),
-					a: ({ children, href }) => (
-						<a
-							href={href ? resolveMarkdownUrl(href, readme, "link") : undefined}
-							target={href && !isHashLink(href) ? "_blank" : undefined}
-							rel={
-								href && !isHashLink(href) ? "noopener noreferrer" : undefined
-							}
-							className="text-[var(--accent-light)] underline underline-offset-2 transition-colors hover:text-primary"
-						>
-							{children}
-						</a>
-					),
-					img: ({ src, alt, width, height, title }) => (
-						<img
-							src={src ? resolveMarkdownUrl(src, readme, "image") : undefined}
-							alt={alt ?? ""}
-							width={width}
-							height={height}
-							title={title}
-							loading="lazy"
-							className="inline-block h-auto max-w-full align-middle"
-						/>
-					),
-				}}
-			>
-				{content}
-			</ReactMarkdown>
-		</div>
-	);
 };
 
 const getSlideOrientation = (slide: GallerySlide) => {
@@ -503,46 +296,55 @@ const getMediaLayout = (items: MediaItem[]): MediaLayout => {
 	return "image-hero";
 };
 
+const HERO_FIRST_CLASS =
+	"sm:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+const SINGLE_IMAGE_CLASS =
+	"sm:col-span-1 lg:col-span-2 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+const DEFAULT_TILE_CLASS =
+	"sm:col-span-1 lg:col-span-2 lg:row-span-1 min-h-[140px] sm:min-h-[164px]";
+const FULL_SPAN_CLASS =
+	"sm:col-span-3 lg:col-span-6 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
+
+const avaluoTileClassMap: Record<string, string> = {
+	"0:video": HERO_FIRST_CLASS,
+	"1:image": SINGLE_IMAGE_CLASS,
+};
+
+const getAvaluoTileClass = (index: number, item: MediaItem) =>
+	avaluoTileClassMap[`${index}:${item.kind}`] ?? DEFAULT_TILE_CLASS;
+
+const heroFirstKinds = new Set(["video-hero:video", "image-hero:image"]);
+
+const isHeroFirstCheck = (
+	layout: MediaLayout,
+	item: MediaItem,
+	index: number,
+): boolean => index === 0 && heroFirstKinds.has(`${layout}:${item.kind}`);
+
+const getProjectSpecificClass = (
+	projectId: string,
+	layout: MediaLayout,
+	index: number,
+	item: MediaItem,
+): string | undefined => {
+	if (projectId === "emmax")
+		return "aspect-[24/7] min-h-[140px] sm:min-h-[160px]";
+	if (projectId === "avaluo" && layout === "video-hero")
+		return getAvaluoTileClass(index, item);
+	return undefined;
+};
+
 const getTileClassName = (
 	projectId: string,
 	layout: MediaLayout,
 	item: MediaItem,
 	index: number,
-	imageCount: number,
 ) => {
-	if (projectId === "emmax") {
-		return "aspect-[24/7] min-h-[140px] sm:min-h-[160px]";
-	}
-
-	if (projectId === "avaluo" && layout === "video-hero") {
-		if (index === 0 && item.kind === "video") {
-			return "sm:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
-		}
-
-		if (index === 1 && item.kind === "image") {
-			return "sm:col-span-1 lg:col-span-2 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
-		}
-
-		return "sm:col-span-1 lg:col-span-2 lg:row-span-1 min-h-[140px] sm:min-h-[164px]";
-	}
-
-	if (layout === "single-focus") {
-		return "sm:col-span-3 lg:col-span-6 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
-	}
-
-	if (layout === "video-hero" && index === 0 && item.kind === "video") {
-		return "sm:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
-	}
-
-	if (layout === "image-hero" && index === 0 && item.kind === "image") {
-		return "sm:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
-	}
-
-	if (imageCount === 1 && index === 1) {
-		return "sm:col-span-1 lg:col-span-2 lg:row-span-2 min-h-[200px] sm:min-h-[280px] lg:min-h-[340px]";
-	}
-
-	return "sm:col-span-1 lg:col-span-2 lg:row-span-1 min-h-[140px] sm:min-h-[164px]";
+	const projectClass = getProjectSpecificClass(projectId, layout, index, item);
+	if (projectClass) return projectClass;
+	if (layout === "single-focus") return FULL_SPAN_CLASS;
+	if (isHeroFirstCheck(layout, item, index)) return HERO_FIRST_CLASS;
+	return DEFAULT_TILE_CLASS;
 };
 
 const getCollageGridClassName = (projectId: string) => {
@@ -583,7 +385,8 @@ const VideoHeroTile: React.FC<{
 	youtubeUrl: string;
 	onOpen: () => void;
 	className: string;
-}> = ({ projectName, youtubeUrl, onOpen, className }) => {
+	lang: "en" | "es";
+}> = ({ projectName, youtubeUrl, onOpen, className, lang }) => {
 	return (
 		<button
 			type="button"
@@ -599,6 +402,7 @@ const VideoHeroTile: React.FC<{
 					showControls={false}
 					className="pointer-events-none"
 					fit="cover"
+					lang={lang}
 				/>
 				<div className={mediaTileOverlay} />
 				<div className="absolute right-3 bottom-3 rounded-full bg-black/55 backdrop-blur-sm border border-white/10 p-2 text-white/90">
@@ -614,7 +418,8 @@ const ImageTile: React.FC<{
 	image: GallerySlide;
 	className: string;
 	onOpen: () => void;
-}> = ({ projectName, image, className, onOpen }) => {
+	lang: "en" | "es";
+}> = ({ projectName, image, className, onOpen, lang }) => {
 	return (
 		<button
 			type="button"
@@ -623,12 +428,23 @@ const ImageTile: React.FC<{
 		>
 			<div className="absolute inset-0 p-1.5">
 				<div className="relative h-full w-full overflow-hidden rounded-md border border-white/5 bg-[var(--bg-card)]/80">
-					<img
-						src={image.src}
+					<LoadingMedia
+						lang={lang}
 						alt={`${projectName} preview`}
-						className="absolute inset-0 h-full w-full select-none object-cover object-left-top"
-						loading="lazy"
-					/>
+						className="absolute inset-0 h-full w-full"
+					>
+						{({ onLoad, onError, style }) => (
+							<img
+								src={image.src}
+								alt={`${projectName} preview`}
+								className="absolute inset-0 h-full w-full select-none object-cover object-left-top"
+								style={style}
+								onLoad={onLoad}
+								onError={onError}
+								loading="lazy"
+							/>
+						)}
+					</LoadingMedia>
 					<div className={mediaTileOverlay} />
 					<div className="absolute right-3 bottom-3 rounded-full bg-black/55 backdrop-blur-sm border border-white/10 p-2 text-white/90">
 						<ImageIcon size={14} />
@@ -639,16 +455,52 @@ const ImageTile: React.FC<{
 	);
 };
 
+const MediaGrid: React.FC<{
+	project: Project;
+	items: MediaItem[];
+	layout: MediaLayout;
+	onOpen: (index: number) => void;
+	lang: "en" | "es";
+}> = ({ project, items, layout, onOpen, lang }) => (
+	<div className={getCollageGridClassName(project.id)}>
+		{items.map((item, index) => {
+			const className = getTileClassName(project.id, layout, item, index);
+			if (item.kind === "video") {
+				return (
+					<VideoHeroTile
+						key={`${project.id}-video`}
+						projectName={project.name}
+						youtubeUrl={item.videoUrl}
+						onOpen={() => onOpen(index)}
+						className={className}
+						lang={lang}
+					/>
+				);
+			}
+			return (
+				<ImageTile
+					key={item.slide.src}
+					projectName={project.name}
+					image={item.slide}
+					className={className}
+					onOpen={() => onOpen(index)}
+					lang={lang}
+				/>
+			);
+		})}
+	</div>
+);
+
 const MediaCollage: React.FC<{
 	project: Project;
-}> = ({ project }) => {
+	lang: "en" | "es";
+}> = ({ project, lang }) => {
 	const items = useMemo(() => buildMediaItems(project), [project]);
 	const lightboxElements = useMemo(
 		() => buildLightboxElements(project, items),
 		[project, items],
 	);
 	const layout = getMediaLayout(items);
-	const imageCount = items.filter((item) => item.kind === "image").length;
 	const lightboxRef = useRef<LightboxInstance | null>(null);
 
 	useEffect(() => {
@@ -669,9 +521,7 @@ const MediaCollage: React.FC<{
 			videosWidth: "92vw",
 			descPosition: "bottom",
 		});
-
 		lightboxRef.current = lightbox;
-
 		return () => {
 			lightbox.destroy();
 			lightboxRef.current = null;
@@ -683,39 +533,13 @@ const MediaCollage: React.FC<{
 	};
 
 	return (
-		<div className={getCollageGridClassName(project.id)}>
-			{items.map((item, index) => {
-				const className = getTileClassName(
-					project.id,
-					layout,
-					item,
-					index,
-					imageCount,
-				);
-
-				if (item.kind === "video") {
-					return (
-						<VideoHeroTile
-							key={`${project.id}-video`}
-							projectName={project.name}
-							youtubeUrl={item.videoUrl}
-							onOpen={() => openLightboxAt(index)}
-							className={className}
-						/>
-					);
-				}
-
-				return (
-					<ImageTile
-						key={item.slide.src}
-						projectName={project.name}
-						image={item.slide}
-						className={className}
-						onOpen={() => openLightboxAt(index)}
-					/>
-				);
-			})}
-		</div>
+		<MediaGrid
+			project={project}
+			items={items}
+			layout={layout}
+			onOpen={openLightboxAt}
+			lang={lang}
+		/>
 	);
 };
 
@@ -794,6 +618,38 @@ interface ReadmeModalProps {
 	onClose: () => void;
 }
 
+const ReadmeHeader: React.FC<{
+	project: Project;
+	readme: ResolvedReadme | null;
+	onClose: () => void;
+}> = ({ project, readme, onClose }) => (
+	<div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-[var(--border-default)] select-none gap-3">
+		<div className="flex items-center gap-2">
+			<BookOpen size={18} className="text-secondary" />
+			<span className="font-mono text-[14.5px] font-bold text-primary">
+				{project.name} -{" "}
+				{readme?.source === "remote" ? "README.md" : "DOCUMENTACION"}
+			</span>
+		</div>
+		<button
+			type="button"
+			onClick={onClose}
+			className="text-secondary hover:text-primary p-1.5 rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
+		>
+			<X size={18} />
+		</button>
+	</div>
+);
+
+const ReadmeSpinner: React.FC<{ lang: "en" | "es" }> = ({ lang }) => (
+	<div className="w-full h-full flex flex-col items-center justify-center gap-3 select-none">
+		<div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-default)] border-t-[var(--accent-light)] animate-spin" />
+		<span className="font-mono text-[13px] text-secondary">
+			{lang === "es" ? "Cargando archivo..." : "Loading document..."}
+		</span>
+	</div>
+);
+
 const ReadmeModal: React.FC<ReadmeModalProps> = ({
 	project,
 	readme,
@@ -813,54 +669,37 @@ const ReadmeModal: React.FC<ReadmeModalProps> = ({
 		};
 	}, [project]);
 
-	if (!project) {
-		return null;
-	}
+	if (!project) return null;
 
 	return createPortal(
 		<AnimatePresence>
-			<div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 md:p-8">
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop click closes modal */}
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click closes modal */}
+			<div
+				onClick={onClose}
+				className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 md:p-8"
+			>
 				<motion.div
+					onClick={(e) => e.stopPropagation()}
 					initial={{ opacity: 0, scale: 0.95, y: 15 }}
 					animate={{ opacity: 1, scale: 1, y: 0 }}
 					exit={{ opacity: 0, scale: 0.95, y: 15 }}
 					transition={{ duration: 0.25, ease: "easeOut" }}
 					className="bg-[var(--bg-card)] border border-[var(--border-hover)] rounded-xl w-full max-w-[800px] max-h-[85dvh] h-[80dvh] flex flex-col overflow-hidden shadow-2xl relative"
 				>
-					<div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-[var(--border-default)] select-none gap-3">
-						<div className="flex items-center gap-2">
-							<BookOpen size={18} className="text-secondary" />
-							<span className="font-mono text-[14.5px] font-bold text-primary">
-								{project.name} -{" "}
-								{readme?.source === "remote" ? "README.md" : "DOCUMENTACION"}
-							</span>
-						</div>
-						<button
-							type="button"
-							onClick={onClose}
-							className="text-secondary hover:text-primary p-1.5 rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
-						>
-							<X size={18} />
-						</button>
-					</div>
+					<ReadmeHeader project={project} readme={readme} onClose={onClose} />
 
 					<div
 						data-lenis-prevent
 						className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar"
 					>
 						{loading ? (
-							<div className="w-full h-full flex flex-col items-center justify-center gap-3 select-none">
-								<div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-default)] border-t-[var(--accent-light)] animate-spin" />
-								<span className="font-mono text-[13px] text-secondary">
-									{lang === "es"
-										? "Cargando archivo..."
-										: "Loading document..."}
-								</span>
-							</div>
+							<ReadmeSpinner lang={lang} />
 						) : (
 							<MarkdownRenderer
 								content={readmeText}
-								readme={readme?.source === "remote" ? readme : null}
+								readme={readme}
+								lang={lang}
 							/>
 						)}
 					</div>
@@ -878,102 +717,242 @@ interface ProjectSelectorProps {
 	lang: "en" | "es";
 }
 
+interface ProjectListItemProps {
+	project: Project;
+	isActive: boolean;
+	isMobile: boolean;
+	lang: "en" | "es";
+	onSelect: (id: string, name: string) => void;
+}
+
+const ITEM_BASE_CLASSES: Record<string, string> = {
+	mobile:
+		"relative w-full px-3 py-2.5 rounded-xl border flex flex-col gap-0.5 cursor-pointer text-left overflow-hidden transition-all duration-150",
+	desktop:
+		"relative w-full text-left px-3.5 py-2.5 rounded-lg flex flex-col gap-1 cursor-pointer border select-none overflow-hidden transition-all duration-150",
+};
+
+const ITEM_STATE_CLASSES: Record<string, string> = {
+	"true:true": "border-transparent text-primary font-medium",
+	"true:false": "border-transparent text-primary font-semibold shadow-xs",
+	"false:true":
+		"border-[var(--border-default)] text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/40 hover:border-[var(--border-hover)]",
+	"false:false":
+		"border-transparent text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/30 hover:border-[var(--border-default)]",
+};
+
+const getItemClassName = (isActive: boolean, isMobile: boolean): string => {
+	const base = ITEM_BASE_CLASSES[isMobile ? "mobile" : "desktop"];
+	const state = ITEM_STATE_CLASSES[`${isActive}:${isMobile}`];
+	return `${base} ${state}`;
+};
+
+const DOT_SIZE_CLASSES: Record<string, string> = {
+	mobile: "w-1.5 h-1.5 rounded-full border projects-index-dot",
+	desktop: "w-2 h-2 rounded-full flex-shrink-0 border projects-index-dot",
+};
+
+const DOT_STATE_CLASSES: Record<string, string> = {
+	"true:true":
+		"bg-[var(--accent-brand)] border-[var(--accent-brand)] scale-110",
+	"true:false":
+		"bg-[var(--accent-brand)] border-[var(--accent-brand)] scale-110 shadow-[0_0_8px_rgba(43,69,136,0.55)]",
+	"false:true": "bg-transparent border-[var(--projects-index-dot-border)]",
+	"false:false": "bg-transparent border-[var(--projects-index-dot-border)]",
+};
+
+const getDotClassName = (isActive: boolean, isMobile: boolean): string => {
+	const size = DOT_SIZE_CLASSES[isMobile ? "mobile" : "desktop"];
+	const state = DOT_STATE_CLASSES[`${isActive}:${isMobile}`];
+	return `${size} ${state}`;
+};
+
+const LAYOUT_IDS: Record<string, string> = {
+	mobile: "activeProjectChipHighlight",
+	desktop: "activeProjectListHighlight",
+};
+
+const BG_CLASSES: Record<string, string> = {
+	mobile:
+		"absolute inset-0 bg-[var(--bg-card)] border border-[var(--projects-index-highlight-border)] rounded-xl -z-0",
+	desktop:
+		"absolute inset-0 bg-[var(--bg-card)] border border-[var(--projects-index-highlight-border)] rounded-lg -z-0",
+};
+
+const FLEX_CLASSES: Record<string, string> = {
+	mobile: "relative z-10 flex items-center gap-1.5 text-[12.5px]",
+	desktop: "relative z-10 flex items-center gap-2.5 min-w-0 w-full",
+};
+
+const DATE_CLASSES: Record<string, string> = {
+	mobile: "relative z-10 text-[9.5px] font-mono text-muted mt-0.5",
+	desktop: "relative z-10 pl-4.5 text-[10px] font-mono text-muted",
+};
+
+const NAME_CLASSES: Record<string, string> = {
+	mobile: "truncate block text-[12.5px] font-medium",
+	desktop: "truncate text-[13.5px] font-bold",
+};
+
+const ProjectListItem: React.FC<ProjectListItemProps> = ({
+	project,
+	isActive,
+	isMobile,
+	lang,
+	onSelect,
+}) => {
+	const mode = isMobile ? "mobile" : "desktop";
+	return (
+		<button
+			type="button"
+			onClick={() => onSelect(project.id, project.name)}
+			className={getItemClassName(isActive, isMobile)}
+		>
+			{isActive && (
+				<motion.div
+					layoutId={LAYOUT_IDS[mode]}
+					className={BG_CLASSES[mode]}
+					transition={{ type: "spring", stiffness: 350, damping: 30 }}
+				/>
+			)}
+			<div className={FLEX_CLASSES[mode]}>
+				<span className={getDotClassName(isActive, isMobile)} />
+				<span className={NAME_CLASSES[mode]}>{project.name}</span>
+			</div>
+			<div className={DATE_CLASSES[mode]}>
+				{getProjectDateText(project, lang)}
+			</div>
+		</button>
+	);
+};
+
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 	activeProjects,
 	activeProjectId,
 	onSelect,
 	lang,
-}) => {
-	const renderProjectItem = (project: Project, isMobile: boolean) => {
-		const active = project.id === activeProjectId;
-		return (
-			<button
-				key={project.id}
-				type="button"
-				onClick={() => onSelect(project.id, project.name)}
-				className={
+}) => (
+	<>
+		<div className="grid grid-cols-2 md:hidden gap-2 pb-1 select-none w-full">
+			{activeProjects.map((project) => (
+				<ProjectListItem
+					key={project.id}
+					project={project}
+					isActive={project.id === activeProjectId}
 					isMobile
-						? `relative w-full px-3 py-2.5 rounded-xl border flex flex-col gap-0.5 cursor-pointer text-left overflow-hidden transition-all duration-150 ${
-								active
-									? "border-transparent text-primary font-medium"
-									: "border-[var(--border-default)] text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/40 hover:border-[var(--border-hover)]"
-							}`
-						: `relative w-full text-left px-3.5 py-2.5 rounded-lg flex flex-col gap-1 cursor-pointer border select-none overflow-hidden transition-all duration-150 ${
-								active
-									? "border-transparent text-primary font-semibold shadow-xs"
-									: "border-transparent text-secondary hover:text-primary hover:bg-[var(--bg-subtle)]/30 hover:border-[var(--border-default)]"
-							}`
-				}
-			>
-				{active && (
-					<motion.div
-						layoutId={
-							isMobile
-								? "activeProjectChipHighlight"
-								: "activeProjectListHighlight"
-						}
-						className={
-							isMobile
-								? "absolute inset-0 bg-[var(--bg-card)] border border-[var(--projects-index-highlight-border)] rounded-xl -z-0"
-								: "absolute inset-0 bg-[var(--bg-card)] border border-[var(--projects-index-highlight-border)] rounded-lg -z-0"
-						}
-						transition={{ type: "spring", stiffness: 350, damping: 30 }}
-					/>
-				)}
-				<div
-					className={
-						isMobile
-							? "relative z-10 flex items-center gap-1.5 text-[12.5px]"
-							: "relative z-10 flex items-center gap-2.5 min-w-0 w-full"
-					}
-				>
-					<span
-						className={
-							isMobile
-								? `w-1.5 h-1.5 rounded-full border projects-index-dot ${
-										active
-											? "bg-[var(--accent-brand)] border-[var(--accent-brand)] scale-110"
-											: "bg-transparent border-[var(--projects-index-dot-border)]"
-									}`
-								: `w-2 h-2 rounded-full flex-shrink-0 border projects-index-dot ${
-										active
-											? "bg-[var(--accent-brand)] border-[var(--accent-brand)] scale-110 shadow-[0_0_8px_rgba(43,69,136,0.55)]"
-											: "bg-transparent border-[var(--projects-index-dot-border)]"
-									}`
-						}
-					/>
-					{isMobile ? (
-						<span className="truncate block text-[12.5px] font-medium">
-							{project.name}
-						</span>
-					) : (
-						<span className="truncate text-[13.5px] font-bold">
-							{project.name}
-						</span>
-					)}
-				</div>
-				<div
-					className={
-						isMobile
-							? "relative z-10 text-[9.5px] font-mono text-muted mt-0.5"
-							: "relative z-10 pl-4.5 text-[10px] font-mono text-muted"
-					}
-				>
-					{getProjectDateText(project, lang)}
-				</div>
-			</button>
-		);
-	};
+					lang={lang}
+					onSelect={onSelect}
+				/>
+			))}
+		</div>
+		<div className="hidden md:flex flex-col gap-1.5 mt-1 relative">
+			{activeProjects.map((project) => (
+				<ProjectListItem
+					key={project.id}
+					project={project}
+					isActive={project.id === activeProjectId}
+					isMobile={false}
+					lang={lang}
+					onSelect={onSelect}
+				/>
+			))}
+		</div>
+	</>
+);
+
+const countCards = (
+	showGithub: boolean,
+	showLive: boolean,
+	showReadme: boolean,
+): number => {
+	let count = 0;
+	if (showGithub) count++;
+	if (showLive) count++;
+	if (showReadme) count++;
+	return count;
+};
+
+const getDescription = (project: Project, lang: "en" | "es") =>
+	lang === "es" ? project.descriptionEs : project.descriptionEn;
+
+const getGithubLinkProps = (
+	project: Project,
+	lang: "en" | "es",
+): LinkCardProps | null =>
+	project.githubUrl
+		? {
+				href: project.githubUrl,
+				icon: <GithubIcon size={18} />,
+				label: "GitHub",
+				title: lang === "es" ? "Codigo fuente" : "Source code",
+			}
+		: null;
+
+const getLiveLinkProps = (
+	project: Project,
+	lang: "en" | "es",
+): LinkCardProps | null =>
+	project.liveUrl
+		? {
+				href: project.liveUrl,
+				icon: <Globe size={18} />,
+				label: lang === "es" ? "Despliegue" : "Deployment",
+				title: lang === "es" ? "Visitar sitio" : "Visit site",
+			}
+		: null;
+
+const getReadmeLinkProps = (
+	project: Project,
+	readmeLabel: string,
+	onOpenReadme: (project: Project) => void,
+): LinkCardProps => ({
+	onClick: () => onOpenReadme(project),
+	icon: <BookOpen size={18} />,
+	label: "Markdown",
+	title: readmeLabel,
+});
+
+const LINK_COLS_CLASSES: Record<number, string> = {
+	1: "grid-cols-1",
+	2: "grid-cols-1 sm:grid-cols-2",
+};
+
+const getLinkGridClass = (cardsLength: number): string =>
+	LINK_COLS_CLASSES[cardsLength] ?? "grid-cols-1 sm:grid-cols-3";
+
+interface LinkCardsProps {
+	showGithub: boolean;
+	showLive: boolean;
+	showReadme: boolean;
+	project: Project;
+	lang: "en" | "es";
+	readmeLabel: string;
+	onOpenReadme: (project: Project) => void;
+}
+
+const LinkCards: React.FC<LinkCardsProps> = ({
+	showGithub: _showGithub,
+	showLive: _showLive,
+	showReadme,
+	project,
+	lang,
+	readmeLabel,
+	onOpenReadme,
+}) => {
+	const cards = [
+		getGithubLinkProps(project, lang),
+		getLiveLinkProps(project, lang),
+		showReadme ? getReadmeLinkProps(project, readmeLabel, onOpenReadme) : null,
+	].filter((c): c is LinkCardProps => c !== null);
 
 	return (
-		<>
-			<div className="grid grid-cols-2 md:hidden gap-2 pb-1 select-none w-full">
-				{activeProjects.map((project) => renderProjectItem(project, true))}
-			</div>
-			<div className="hidden md:flex flex-col gap-1.5 mt-1 relative">
-				{activeProjects.map((project) => renderProjectItem(project, false))}
-			</div>
-		</>
+		<div
+			className={`sm:col-span-6 grid gap-3 ${getLinkGridClass(cards.length)}`}
+		>
+			{cards.map((card) => (
+				<LinkCard key={card.title} {...card} />
+			))}
+		</div>
 	);
 };
 
@@ -995,16 +974,6 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 	const showGithub = !!project.githubUrl;
 	const showLive = !!project.liveUrl;
 
-	const totalCards =
-		(showGithub ? 1 : 0) + (showLive ? 1 : 0) + (showReadme ? 1 : 0);
-
-	let colsClass = "grid-cols-1 sm:grid-cols-3";
-	if (totalCards === 1) {
-		colsClass = "grid-cols-1";
-	} else if (totalCards === 2) {
-		colsClass = "grid-cols-1 sm:grid-cols-2";
-	}
-
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
 			<div className="sm:col-span-6 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl p-5 flex flex-col justify-between gap-4 text-left">
@@ -1016,7 +985,7 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 						{getProjectDateText(project, lang)}
 					</span>
 					<p className="text-[14.5px] text-secondary leading-relaxed">
-						{lang === "es" ? project.descriptionEs : project.descriptionEn}
+						{getDescription(project, lang)}
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-1.5 mt-2">
@@ -1032,270 +1001,399 @@ const ProjectBentoPreview: React.FC<ProjectBentoPreviewProps> = ({
 			</div>
 
 			<div className="sm:col-span-6 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl relative p-3 md:p-4">
-				<MediaCollage project={project} />
+				<MediaCollage project={project} lang={lang} />
 			</div>
 
-			{totalCards > 0 && (
-				<div className={`sm:col-span-6 grid gap-3 ${colsClass}`}>
-					{showGithub && project.githubUrl && (
-						<LinkCard
-							href={project.githubUrl}
-							icon={<GithubIcon size={18} />}
-							label="GitHub"
-							title={lang === "es" ? "Codigo fuente" : "Source code"}
-						/>
-					)}
-					{showLive && project.liveUrl && (
-						<LinkCard
-							href={project.liveUrl}
-							icon={<Globe size={18} />}
-							label={lang === "es" ? "Despliegue" : "Deployment"}
-							title={lang === "es" ? "Visitar sitio" : "Visit site"}
-						/>
-					)}
-					{showReadme && (
-						<LinkCard
-							onClick={() => onOpenReadme(project)}
-							icon={<BookOpen size={18} />}
-							label="Markdown"
-							title={readmeLabel}
-						/>
-					)}
-				</div>
+			{countCards(showGithub, showLive, showReadme) > 0 && (
+				<LinkCards
+					showGithub={showGithub}
+					showLive={showLive}
+					showReadme={showReadme}
+					project={project}
+					lang={lang}
+					readmeLabel={readmeLabel}
+					onOpenReadme={onOpenReadme}
+				/>
 			)}
 		</div>
 	);
 };
 
-export const ProjectsCard: React.FC<ProjectsCardProps> = ({
-	id,
-	t,
-	lang,
-	className,
-}) => {
+interface ProjectTabSwitcherProps {
+	activeTab: TabType;
+	onTabChange: (tab: TabType) => void;
+	openSourceLabel: string;
+	privateLabel: string;
+}
+
+const TabButton: React.FC<{
+	label: string;
+	isActive: boolean;
+	onClick: () => void;
+}> = ({ label, isActive, onClick }) => (
+	<button
+		type="button"
+		onClick={onClick}
+		className="relative flex-1 py-1.5 text-[12.5px] font-bold cursor-pointer text-center flex items-center justify-center"
+	>
+		{isActive && (
+			<motion.div
+				layoutId="activeProjectCategoryBackground"
+				className="absolute inset-0 bg-[var(--accent)] rounded-md z-0"
+				transition={{ type: "spring", stiffness: 380, damping: 30 }}
+			/>
+		)}
+		<span
+			className={`relative z-10 transition-colors ${isActive ? "text-[var(--accent-text)]" : "text-secondary hover:text-primary"}`}
+		>
+			{label}
+		</span>
+	</button>
+);
+
+const ProjectTabSwitcher: React.FC<ProjectTabSwitcherProps> = ({
+	activeTab,
+	onTabChange,
+	openSourceLabel,
+	privateLabel,
+}) => (
+	<div className="flex bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg p-0.5 w-full select-none relative">
+		<TabButton
+			label={openSourceLabel}
+			isActive={activeTab === "open-source"}
+			onClick={() => onTabChange("open-source")}
+		/>
+		<TabButton
+			label={privateLabel}
+			isActive={activeTab === "private"}
+			onClick={() => onTabChange("private")}
+		/>
+	</div>
+);
+
+const getHasReadme = (
+	activeTab: TabType,
+	lang: "en" | "es",
+	resolvedReadme: ResolvedReadme | null | undefined,
+	project: Project,
+): boolean =>
+	activeTab === "open-source"
+		? resolvedReadme !== undefined && resolvedReadme !== null
+		: !!(lang === "es" ? project.readmeContentEs : project.readmeContentEn);
+
+const getReadmeLabel = (activeTab: TabType, lang: "en" | "es"): string => {
+	if (activeTab === "open-source") {
+		return lang === "es" ? "Ver README" : "View README";
+	}
+	return lang === "es" ? "Ver Documentacion" : "View Docs";
+};
+
+const getMissingReadmeCopy = (lang: "en" | "es") =>
+	lang === "es"
+		? "# README no disponible\n\nNo se encontro un README remoto valido para este repositorio."
+		: "# README unavailable\n\nNo valid remote README was found for this repository.";
+
+const getFetchErrorCopy = (name: string, lang: "en" | "es") =>
+	lang === "es"
+		? `# ${name}\n\nNo se pudo descargar el archivo README desde GitHub en este momento.`
+		: `# ${name}\n\nThe README could not be downloaded from GitHub right now.`;
+
+const useReadmeResolution = (
+	activeTab: TabType,
+	currentActiveProject: Project,
+): Record<string, ResolvedReadme | null | undefined> => {
+	const [resolvedReadmes, setResolvedReadmes] = useState<
+		Record<string, ResolvedReadme | null | undefined>
+	>({});
+
+	useEffect(() => {
+		if (activeTab !== "open-source" || !currentActiveProject.githubUrl) return;
+		if (resolvedReadmes[currentActiveProject.id] !== undefined) return;
+		const controller = new AbortController();
+		resolveRemoteReadme(currentActiveProject, controller.signal)
+			.then((resolvedReadme) => {
+				setResolvedReadmes((prev) => ({
+					...prev,
+					[currentActiveProject.id]: resolvedReadme,
+				}));
+			})
+			.catch((error) => {
+				if (error instanceof DOMException && error.name === "AbortError")
+					return;
+				setResolvedReadmes((prev) => ({
+					...prev,
+					[currentActiveProject.id]: null,
+				}));
+			});
+		return () => controller.abort();
+	}, [activeTab, currentActiveProject, resolvedReadmes]);
+
+	return resolvedReadmes;
+};
+
+const useProjectNavigation = () => {
 	const [activeTab, setActiveTab] = useState<TabType>("open-source");
 	const activeProjects =
 		activeTab === "open-source" ? projects : privateProjects;
 	const [activeProjectId, setActiveProjectId] = useState<string>(
 		activeProjects[0].id,
 	);
+
+	const handleTabChange = (tab: TabType) => {
+		setActiveTab(tab);
+		setActiveProjectId(
+			(tab === "open-source" ? projects : privateProjects)[0].id,
+		);
+		track.contactClicked(`tab_${tab}`);
+	};
+
+	const currentActiveProject = activeProjects.find(
+		(p) => p.id === activeProjectId,
+	) as Project;
+
+	return {
+		activeTab,
+		activeProjects,
+		activeProjectId,
+		setActiveProjectId,
+		handleTabChange,
+		currentActiveProject,
+	};
+};
+
+const loadRemoteReadme = async (
+	project: Project,
+	resolvedReadmes: Record<string, ResolvedReadme | null | undefined>,
+	lang: "en" | "es",
+	setReadmeText: (v: string) => void,
+	setSelectedReadme: (v: ResolvedReadme | null) => void,
+	setLoadingReadme: (v: boolean) => void,
+) => {
+	const resolvedReadme = resolvedReadmes[project.id];
+	if (!resolvedReadme) {
+		setReadmeText(getMissingReadmeCopy(lang));
+		setLoadingReadme(false);
+		return;
+	}
+	try {
+		const res = await fetch(resolvedReadme.rawUrl);
+		if (!res.ok) throw new Error("Fail to load README");
+		setReadmeText(await res.text());
+		setSelectedReadme(resolvedReadme);
+	} catch {
+		setReadmeText(getFetchErrorCopy(project.name, lang));
+	}
+	setLoadingReadme(false);
+};
+
+const loadEmbeddedReadme = (
+	project: Project,
+	lang: "en" | "es",
+	setReadmeText: (v: string) => void,
+	setSelectedReadme: (v: ResolvedReadme | null) => void,
+	setLoadingReadme: (v: boolean) => void,
+) => {
+	const content =
+		lang === "es" ? project.readmeContentEs : project.readmeContentEn;
+	setReadmeText(content || "");
+	setSelectedReadme({
+		rawUrl: "",
+		rawBaseUrl: "",
+		blobBaseUrl: "",
+		source: "embedded",
+	});
+	setLoadingReadme(false);
+};
+
+interface ReadmeModalState {
+	selectedProject: Project | null;
+	readmeText: string;
+	loadingReadme: boolean;
+	selectedReadme: ResolvedReadme | null;
+	handleOpenReadme: (project: Project) => void;
+	closeReadme: () => void;
+}
+
+const useReadmeModal = (
+	lang: "en" | "es",
+	activeTab: TabType,
+	resolvedReadmes: Record<string, ResolvedReadme | null | undefined>,
+): ReadmeModalState => {
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 	const [readmeText, setReadmeText] = useState<string>("");
 	const [loadingReadme, setLoadingReadme] = useState<boolean>(false);
 	const [selectedReadme, setSelectedReadme] = useState<ResolvedReadme | null>(
 		null,
 	);
-	const [resolvedReadmes, setResolvedReadmes] = useState<
-		Record<string, ResolvedReadme | null | undefined>
-	>({});
-
-	const handleTabChange = (tab: TabType) => {
-		setActiveTab(tab);
-		const list = tab === "open-source" ? projects : privateProjects;
-		setActiveProjectId(list[0].id);
-		track.contactClicked(`tab_${tab}`);
-	};
-
-	const currentActiveProject =
-		activeProjects.find((project) => project.id === activeProjectId) ||
-		activeProjects[0];
-	const currentResolvedReadme = resolvedReadmes[currentActiveProject.id];
-	const currentProjectHasReadme =
-		activeTab === "open-source"
-			? currentResolvedReadme !== undefined && currentResolvedReadme !== null
-			: !!(lang === "es"
-					? currentActiveProject.readmeContentEs
-					: currentActiveProject.readmeContentEn);
-	const currentReadmeLabel =
-		activeTab === "open-source"
-			? lang === "es"
-				? "Ver README"
-				: "View README"
-			: lang === "es"
-				? "Ver Documentacion"
-				: "View Docs";
-
-	useEffect(() => {
-		if (activeTab !== "open-source" || !currentActiveProject.githubUrl) {
-			return;
-		}
-
-		if (resolvedReadmes[currentActiveProject.id] !== undefined) {
-			return;
-		}
-
-		const controller = new AbortController();
-
-		resolveRemoteReadme(currentActiveProject, controller.signal)
-			.then((resolvedReadme) => {
-				setResolvedReadmes((previous) => ({
-					...previous,
-					[currentActiveProject.id]: resolvedReadme,
-				}));
-			})
-			.catch((error) => {
-				if (error instanceof DOMException && error.name === "AbortError") {
-					return;
-				}
-
-				setResolvedReadmes((previous) => ({
-					...previous,
-					[currentActiveProject.id]: null,
-				}));
-			});
-
-		return () => controller.abort();
-	}, [activeTab, currentActiveProject, resolvedReadmes]);
 
 	const handleOpenReadme = (project: Project) => {
 		setSelectedProject(project);
 		setLoadingReadme(true);
 		setSelectedReadme(null);
 		track.projectClicked(project.name);
-
 		if (activeTab === "open-source") {
-			const resolvedReadme = resolvedReadmes[project.id];
-			if (!resolvedReadme) {
-				setReadmeText(
-					lang === "es"
-						? "# README no disponible\n\nNo se encontro un README remoto valido para este repositorio."
-						: "# README unavailable\n\nNo valid remote README was found for this repository.",
-				);
-				setLoadingReadme(false);
-				return;
-			}
-
-			fetch(resolvedReadme.rawUrl)
-				.then((res) => {
-					if (!res.ok) throw new Error("Fail to load README");
-					return res.text();
-				})
-				.then((text) => {
-					setReadmeText(text);
-					setSelectedReadme(resolvedReadme);
-					setLoadingReadme(false);
-				})
-				.catch(() => {
-					setReadmeText(
-						lang === "es"
-							? `# ${project.name}\n\nNo se pudo descargar el archivo README desde GitHub en este momento.`
-							: `# ${project.name}\n\nThe README could not be downloaded from GitHub right now.`,
-					);
-					setLoadingReadme(false);
-				});
-			return;
+			loadRemoteReadme(
+				project,
+				resolvedReadmes,
+				lang,
+				setReadmeText,
+				setSelectedReadme,
+				setLoadingReadme,
+			);
+		} else {
+			loadEmbeddedReadme(
+				project,
+				lang,
+				setReadmeText,
+				setSelectedReadme,
+				setLoadingReadme,
+			);
 		}
-
-		const content =
-			lang === "es" ? project.readmeContentEs : project.readmeContentEn;
-		setReadmeText(content || "");
-		setSelectedReadme({
-			rawUrl: "",
-			rawBaseUrl: "",
-			blobBaseUrl: "",
-			source: "embedded",
-		});
-		setLoadingReadme(false);
 	};
 
+	const closeReadme = () => setSelectedProject(null);
+
+	return {
+		selectedProject,
+		readmeText,
+		loadingReadme,
+		selectedReadme,
+		handleOpenReadme,
+		closeReadme,
+	};
+};
+
+const ProjectsCardHeader: React.FC<{
+	title: string;
+	count: number;
+	lang: "en" | "es";
+}> = ({ title, count, lang }) => (
+	<div className="flex justify-between items-center pb-2.5 border-b border-[var(--projects-card-border)] select-none">
+		<h2 className="text-[15.5px] font-bold uppercase tracking-wider text-primary">
+			{title}
+		</h2>
+		<span className="font-mono text-[14.5px] text-secondary">
+			{count} {lang === "es" ? "proyectos" : "projects"}
+		</span>
+	</div>
+);
+
+const ProjectsCardMain: React.FC<{
+	activeTab: TabType;
+	onTabChange: (tab: TabType) => void;
+	t: Translations;
+	lang: "en" | "es";
+	activeProjects: Project[];
+	activeProjectId: string;
+	onSelectProject: (id: string, name: string) => void;
+	currentActiveProject: Project;
+	showReadme: boolean;
+	readmeLabel: string;
+	onOpenReadme: (project: Project) => void;
+}> = ({
+	activeTab,
+	onTabChange,
+	t,
+	lang,
+	activeProjects,
+	activeProjectId,
+	onSelectProject,
+	currentActiveProject,
+	showReadme,
+	readmeLabel,
+	onOpenReadme,
+}) => (
+	<div className="flex-1 flex flex-col md:flex-row gap-6">
+		<div className="w-full md:w-[220px] lg:w-[240px] flex-shrink-0 flex flex-col gap-4">
+			<ProjectTabSwitcher
+				activeTab={activeTab}
+				onTabChange={onTabChange}
+				openSourceLabel={t.projects.openSourceTab}
+				privateLabel={t.projects.privateTab}
+			/>
+			<ProjectSelector
+				activeProjects={activeProjects}
+				activeProjectId={activeProjectId}
+				lang={lang}
+				onSelect={onSelectProject}
+			/>
+		</div>
+
+		<div className="hidden md:block w-[0.5px] bg-[var(--projects-card-border)] self-stretch" />
+
+		<div className="flex-1 flex flex-col gap-3 min-h-0 md:min-h-[400px]">
+			<AnimatePresence mode="wait">
+				<motion.div
+					key={currentActiveProject.id}
+					initial={{ opacity: 0, y: 10 }}
+					animate={{ opacity: 1, y: 0 }}
+					exit={{ opacity: 0, y: -10 }}
+					transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+				>
+					<ProjectBentoPreview
+						project={currentActiveProject}
+						lang={lang}
+						onOpenReadme={onOpenReadme}
+						showReadme={showReadme}
+						readmeLabel={readmeLabel}
+					/>
+				</motion.div>
+			</AnimatePresence>
+		</div>
+	</div>
+);
+export const ProjectsCard: React.FC<ProjectsCardProps> = ({
+	id,
+	t,
+	lang,
+	className = "",
+}) => {
+	const nav = useProjectNavigation();
+	const resolvedReadmes = useReadmeResolution(
+		nav.activeTab,
+		nav.currentActiveProject,
+	);
+	const readmeModal = useReadmeModal(lang, nav.activeTab, resolvedReadmes);
 	return (
 		<motion.div
 			id={id}
 			variants={cardVariants}
-			{...(selectedProject ? {} : cardHoverProps)}
-			className={`bento-card bento-card--brand-blue bento-col-4 flex flex-col gap-5 overflow-visible ${className || ""}`}
+			{...(readmeModal.selectedProject ? {} : cardHoverProps)}
+			className={`bento-card bento-card--brand-blue bento-col-4 flex flex-col gap-5 overflow-visible ${className}`}
 		>
-			<div className="flex justify-between items-center pb-2.5 border-b border-[var(--projects-card-border)] select-none">
-				<h2 className="text-[15.5px] font-bold uppercase tracking-wider text-primary">
-					{t.sections.projects}
-				</h2>
-				<span className="font-mono text-[14.5px] text-secondary">
-					{activeProjects.length} {lang === "es" ? "proyectos" : "projects"}
-				</span>
-			</div>
-
-			<div className="flex-1 flex flex-col md:flex-row gap-6">
-				<div className="w-full md:w-[220px] lg:w-[240px] flex-shrink-0 flex flex-col gap-4">
-					<div className="flex bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg p-0.5 w-full select-none relative">
-						<button
-							type="button"
-							onClick={() => handleTabChange("open-source")}
-							className="relative flex-1 py-1.5 text-[12.5px] font-bold cursor-pointer text-center flex items-center justify-center"
-						>
-							{activeTab === "open-source" && (
-								<motion.div
-									layoutId="activeProjectCategoryBackground"
-									className="absolute inset-0 bg-[var(--accent)] rounded-md z-0"
-									transition={{ type: "spring", stiffness: 380, damping: 30 }}
-								/>
-							)}
-							<span
-								className={`relative z-10 transition-colors ${activeTab === "open-source" ? "text-[var(--accent-text)]" : "text-secondary hover:text-primary"}`}
-							>
-								{t.projects.openSourceTab}
-							</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => handleTabChange("private")}
-							className="relative flex-1 py-1.5 text-[12.5px] font-bold cursor-pointer text-center flex items-center justify-center gap-1"
-						>
-							{activeTab === "private" && (
-								<motion.div
-									layoutId="activeProjectCategoryBackground"
-									className="absolute inset-0 bg-[var(--accent)] rounded-md z-0"
-									transition={{ type: "spring", stiffness: 380, damping: 30 }}
-								/>
-							)}
-							<span
-								className={`relative z-10 transition-colors flex items-center justify-center gap-1 ${activeTab === "private" ? "text-[var(--accent-text)]" : "text-secondary hover:text-primary"}`}
-							>
-								{t.projects.privateTab}
-							</span>
-						</button>
-					</div>
-
-					<ProjectSelector
-						activeProjects={activeProjects}
-						activeProjectId={activeProjectId}
-						lang={lang}
-						onSelect={(projectId, name) => {
-							setActiveProjectId(projectId);
-							track.projectClicked(name);
-						}}
-					/>
-				</div>
-
-				<div className="hidden md:block w-[0.5px] bg-[var(--projects-card-border)] self-stretch" />
-
-				<div className="flex-1 flex flex-col gap-3 min-h-0 md:min-h-[400px]">
-					<AnimatePresence mode="wait">
-						<motion.div
-							key={currentActiveProject.id}
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: -10 }}
-							transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-						>
-							<ProjectBentoPreview
-								project={currentActiveProject}
-								lang={lang}
-								onOpenReadme={handleOpenReadme}
-								showReadme={currentProjectHasReadme}
-								readmeLabel={currentReadmeLabel}
-							/>
-						</motion.div>
-					</AnimatePresence>
-				</div>
-			</div>
-
-			<ReadmeModal
-				project={selectedProject}
-				readme={selectedReadme}
-				readmeText={readmeText}
-				loading={loadingReadme}
+			<ProjectsCardHeader
+				title={t.sections.projects}
+				count={nav.activeProjects.length}
 				lang={lang}
-				onClose={() => setSelectedProject(null)}
+			/>
+			<ProjectsCardMain
+				activeTab={nav.activeTab}
+				onTabChange={nav.handleTabChange}
+				t={t}
+				lang={lang}
+				activeProjects={nav.activeProjects}
+				activeProjectId={nav.activeProjectId}
+				onSelectProject={(projectId, name) => {
+					nav.setActiveProjectId(projectId);
+					track.projectClicked(name);
+				}}
+				currentActiveProject={nav.currentActiveProject}
+				showReadme={getHasReadme(
+					nav.activeTab,
+					lang,
+					resolvedReadmes[nav.currentActiveProject.id],
+					nav.currentActiveProject,
+				)}
+				readmeLabel={getReadmeLabel(nav.activeTab, lang)}
+				onOpenReadme={readmeModal.handleOpenReadme}
+			/>
+			<ReadmeModal
+				project={readmeModal.selectedProject}
+				readme={readmeModal.selectedReadme}
+				readmeText={readmeModal.readmeText}
+				loading={readmeModal.loadingReadme}
+				lang={lang}
+				onClose={readmeModal.closeReadme}
 			/>
 		</motion.div>
 	);

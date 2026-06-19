@@ -44,6 +44,45 @@ const SocialLinkButton: React.FC<SocialLinkButtonProps> = ({
 	</motion.a>
 );
 
+const githubIcon = (
+	<GithubIcon
+		size={18}
+		className="text-secondary group-hover:text-primary transition-colors"
+	/>
+);
+const linkedinIcon = (
+	<LinkedinIcon
+		size={18}
+		className="text-secondary group-hover:text-primary transition-colors"
+	/>
+);
+const fileTextIcon = (
+	<FileText
+		size={18}
+		className="text-secondary group-hover:text-primary transition-colors"
+	/>
+);
+
+interface MessageButtonProps {
+	onClick: () => void;
+	label: string;
+}
+
+const MessageButton: React.FC<MessageButtonProps> = ({ onClick, label }) => (
+	<motion.button
+		whileHover={{ scale: 1.02 }}
+		whileTap={{ scale: 0.98 }}
+		transition={{ type: "spring", stiffness: 450, damping: 20 }}
+		type="button"
+		onClick={onClick}
+		className="flex items-center justify-center gap-2 w-full px-3.5 py-3 rounded-lg bg-[var(--accent-brand)] hover:bg-[var(--accent-brand)]/85 text-white hover:shadow-[0_0_12px_rgba(43,69,136,0.35)] transition-all duration-150 cursor-pointer font-mono text-[13.5px] font-semibold"
+		style={{ border: "none" }}
+	>
+		<Mail size={14} className="stroke-[2.5]" />
+		{label}
+	</motion.button>
+);
+
 interface ContactCardProps {
 	t: Translations;
 	lang: "en" | "es";
@@ -57,22 +96,13 @@ export const ContactCard: React.FC<ContactCardProps> = ({
 	onOpenModal,
 	className,
 }) => {
-	const handleGithubClick = () => {
-		track.contactClicked("github");
-	};
-
-	const handleLinkedinClick = () => {
-		track.contactClicked("linkedin");
-	};
-
+	const handleGithubClick = () => track.contactClicked("github");
+	const handleLinkedinClick = () => track.contactClicked("linkedin");
 	const handleMessageClick = () => {
 		onOpenModal();
 		track.contactModalOpened();
 	};
-
-	const handleCvClick = () => {
-		track.contactClicked("cv");
-	};
+	const handleCvClick = () => track.contactClicked("cv");
 
 	return (
 		<motion.div
@@ -80,67 +110,38 @@ export const ContactCard: React.FC<ContactCardProps> = ({
 			{...cardHoverProps}
 			className={`bento-card bento-col-1 flex flex-col gap-4 justify-between min-[581px]:min-h-[180px] min-[900px]:min-h-[260px] ${className || ""}`}
 		>
-			{/* Header */}
 			<div className="select-none">
 				<h2 className="text-[13px] font-bold uppercase tracking-wider text-secondary">
 					{t.sections.contact}
 				</h2>
 			</div>
 
-			{/* Buttons block */}
 			<div className="flex flex-col gap-2.5 flex-1 justify-center">
 				<SocialLinkButton
 					href="https://github.com/Rayfel2"
 					onClick={handleGithubClick}
-					icon={
-						<GithubIcon
-							size={18}
-							className="text-secondary group-hover:text-primary transition-colors"
-						/>
-					}
+					icon={githubIcon}
 					label="GitHub"
 					sublabel="github.com/Rayfel2"
 				/>
-
 				<SocialLinkButton
 					href="https://www.linkedin.com/in/rayfel-ogando"
 					onClick={handleLinkedinClick}
-					icon={
-						<LinkedinIcon
-							size={18}
-							className="text-secondary group-hover:text-primary transition-colors"
-						/>
-					}
+					icon={linkedinIcon}
 					label="LinkedIn"
 					sublabel="in/rayfel-ogando"
 				/>
-
 				<SocialLinkButton
 					href={cvPdf}
 					onClick={handleCvClick}
-					icon={
-						<FileText
-							size={18}
-							className="text-secondary group-hover:text-primary transition-colors"
-						/>
-					}
+					icon={fileTextIcon}
 					label={lang === "es" ? "Ver CV" : "View CV"}
 					sublabel="Rayfel Ogando"
 				/>
-
-				{/* CTA modal launcher button */}
-				<motion.button
-					whileHover={{ scale: 1.02 }}
-					whileTap={{ scale: 0.98 }}
-					transition={{ type: "spring", stiffness: 450, damping: 20 }}
-					type="button"
+				<MessageButton
 					onClick={handleMessageClick}
-					className="flex items-center justify-center gap-2 w-full px-3.5 py-3 rounded-lg bg-[var(--accent-brand)] hover:bg-[var(--accent-brand)]/85 text-white hover:shadow-[0_0_12px_rgba(43,69,136,0.35)] transition-all duration-150 cursor-pointer font-mono text-[13.5px] font-semibold"
-					style={{ border: "none" }}
-				>
-					<Mail size={14} className="stroke-[2.5]" />
-					{t.contactModal.submitButton}
-				</motion.button>
+					label={t.contactModal.submitButton}
+				/>
 			</div>
 		</motion.div>
 	);

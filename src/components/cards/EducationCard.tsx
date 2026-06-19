@@ -1,9 +1,8 @@
 import { GraduationCap } from "lucide-react";
-import { motion } from "motion/react";
 import type React from "react";
 import { educations } from "../../data/portfolio";
 import type { Translations } from "../../i18n/translations";
-import { cardHoverProps, cardVariants } from "../layout/BentoGrid";
+import { TimelineCard } from "../layout/TimelineCard";
 
 interface EducationCardProps {
 	id?: string;
@@ -12,6 +11,53 @@ interface EducationCardProps {
 	className?: string;
 }
 
+const getFieldEs = <T extends { Es: string; En: string }>(
+	fields: T,
+	lang: "en" | "es",
+): string => (lang === "es" ? fields.Es : fields.En);
+
+const isCurrentPeriod = (period: string): boolean =>
+	period.toLowerCase().includes("actualidad") || period.includes("2026");
+
+interface EducationItemProps {
+	edu: (typeof educations)[number];
+	lang: "en" | "es";
+}
+
+const EducationItem: React.FC<EducationItemProps> = ({ edu, lang }) => {
+	const degree = getFieldEs({ Es: edu.degreeEs, En: edu.degreeEn }, lang);
+	const period = getFieldEs({ Es: edu.periodEs, En: edu.periodEn }, lang);
+	const details = getFieldEs({ Es: edu.detailsEs, En: edu.detailsEn }, lang);
+	const current = isCurrentPeriod(period);
+
+	return (
+		<div className="relative group">
+			<span className="absolute -left-[23px] top-1.5 flex h-3.5 w-3.5 items-center justify-center">
+				{current ? (
+					<>
+						<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--status-blue)] opacity-75" />
+						<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--status-blue)] shadow-[0_0_6px_rgba(43,69,136,0.5)]" />
+					</>
+				) : (
+					<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--border-hover)] shadow-[0_0_4px_rgba(43,69,136,0.3)]" />
+				)}
+			</span>
+
+			<div className="flex flex-col gap-1">
+				<span className="text-[12px] font-mono text-secondary">{period}</span>
+				<h3 className="text-[15.5px] font-semibold text-primary">{degree}</h3>
+				<div className="text-[13.5px] text-secondary font-medium italic">
+					<span>{edu.institution}</span>
+				</div>
+			</div>
+
+			<p className="mt-2 text-[13px] text-secondary leading-relaxed">
+				{details}
+			</p>
+		</div>
+	);
+};
+
 export const EducationCard: React.FC<EducationCardProps> = ({
 	id,
 	t,
@@ -19,68 +65,16 @@ export const EducationCard: React.FC<EducationCardProps> = ({
 	className,
 }) => {
 	return (
-		<motion.div
+		<TimelineCard
 			id={id}
-			variants={cardVariants}
-			{...cardHoverProps}
-			className={`bento-card bento-col-2 flex flex-col gap-4 justify-between overflow-visible ${className || ""}`}
+			title={t.sections.education}
+			icon={<GraduationCap size={15} className="text-secondary stroke-[2.5]" />}
+			className={className}
+			gap="gap-6"
 		>
-			{/* Header */}
-			<div className="select-none flex justify-between items-center pb-2 border-b border-[var(--border-default)]">
-				<h2 className="text-[13px] font-bold uppercase tracking-wider text-secondary">
-					{t.sections.education}
-				</h2>
-				<GraduationCap size={15} className="text-secondary stroke-[2.5]" />
-			</div>
-
-			{/* Timeline Container */}
-			<div className="relative flex-1 pl-4 border-l border-[var(--accent-brand)]/25 ml-2 flex flex-col gap-6 overflow-visible">
-				{educations.map((edu) => {
-					const degree = lang === "es" ? edu.degreeEs : edu.degreeEn;
-					const period = lang === "es" ? edu.periodEs : edu.periodEn;
-					const details = lang === "es" ? edu.detailsEs : edu.detailsEn;
-
-					// Check if current or active based on years (e.g. INTEC ends in 2026, which is current)
-					const isCurrent =
-						period.toLowerCase().includes("actualidad") ||
-						period.includes("2026");
-
-					return (
-						<div key={edu.id} className="relative group">
-							{/* Timeline Indicator Dot */}
-							<span className="absolute -left-[23px] top-1.5 flex h-3.5 w-3.5 items-center justify-center">
-								{isCurrent ? (
-									<>
-										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--status-blue)] opacity-75" />
-										<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--status-blue)] shadow-[0_0_6px_rgba(43,69,136,0.5)]" />
-									</>
-								) : (
-									<span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--border-hover)] shadow-[0_0_4px_rgba(43,69,136,0.3)]" />
-								)}
-							</span>
-
-							{/* Education Header */}
-							<div className="flex flex-col gap-1">
-								<span className="text-[12px] font-mono text-secondary">
-									{period}
-								</span>
-								<h3 className="text-[15.5px] font-semibold text-primary">
-									{degree}
-								</h3>
-
-								<div className="text-[13.5px] text-secondary font-medium italic">
-									<span>{edu.institution}</span>
-								</div>
-							</div>
-
-							{/* Details Paragraph */}
-							<p className="mt-2 text-[13px] text-secondary leading-relaxed">
-								{details}
-							</p>
-						</div>
-					);
-				})}
-			</div>
-		</motion.div>
+			{educations.map((edu) => (
+				<EducationItem key={edu.id} edu={edu} lang={lang} />
+			))}
+		</TimelineCard>
 	);
 };

@@ -14,16 +14,95 @@ interface CertificationsCardProps {
 	className?: string;
 }
 
-const getCertIcon = (id: string, issuer: string) => {
-	const idLower = id.toLowerCase();
-	const issuerLower = issuer.toLowerCase();
+const certIconRules: Array<{
+	match: (id: string, issuer: string) => boolean;
+	icon: React.ComponentType<{ className?: string }>;
+}> = [
+	{ match: (_, issuer) => issuer.toLowerCase().includes("meta"), icon: SiMeta },
+	{ match: (id) => id.toLowerCase().includes("fortinet"), icon: SiFortinet },
+	{ match: (id) => id.toLowerCase().includes("sas"), icon: TbChartBar },
+	{ match: (id) => id.toLowerCase().includes("web-front-end"), icon: TbCode },
+	{ match: (id) => id.toLowerCase().includes("virtual-study"), icon: TbSchool },
+];
 
-	if (issuerLower.includes("meta")) return SiMeta;
-	if (idLower.includes("fortinet")) return SiFortinet;
-	if (idLower.includes("sas")) return TbChartBar;
-	if (idLower.includes("web-front-end")) return TbCode;
-	if (idLower.includes("virtual-study")) return TbSchool;
-	return TbCertificate;
+const getCertIcon = (id: string, issuer: string) =>
+	certIconRules.find((r) => r.match(id, issuer))?.icon ?? TbCertificate;
+
+interface CertContentProps {
+	name: string;
+	date: string;
+	issuer: string;
+	url?: string;
+	Icon: React.ComponentType<{ className?: string }>;
+}
+
+const CertContent: React.FC<CertContentProps> = ({
+	name,
+	date,
+	issuer,
+	url,
+	Icon,
+}) => (
+	<>
+		<div className="flex-shrink-0 mt-0.5 select-none">
+			<div className="w-8 h-8 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center text-secondary group-hover/cert:border-[var(--border-hover)] transition-colors">
+				<Icon className="w-4 h-4 text-secondary group-hover/cert:text-primary transition-colors" />
+			</div>
+		</div>
+		<div className="flex-1 flex flex-col gap-0.5">
+			<div className="flex justify-between items-start gap-3">
+				<span className="text-[14.5px] font-semibold text-primary leading-snug group-hover/cert:text-[var(--status-blue)] transition-all duration-150">
+					{name}
+				</span>
+				{url && (
+					<ExternalLink
+						size={12}
+						className="text-secondary opacity-60 group-hover/cert:opacity-100 group-hover/cert:text-[var(--status-blue)] group-hover/cert:translate-x-0.5 group-hover/cert:-translate-y-0.5 transition-all flex-shrink-0 mt-0.5"
+					/>
+				)}
+			</div>
+			<div className="flex flex-wrap items-center justify-between gap-1.5 text-[12.5px] text-secondary font-medium mt-0.5 font-normal">
+				<span>
+					{issuer} · {date}
+				</span>
+			</div>
+		</div>
+	</>
+);
+
+const CertItem: React.FC<{
+	cert: (typeof certifications)[number];
+	lang: "en" | "es";
+}> = ({ cert, lang }) => {
+	const info =
+		lang === "es"
+			? { name: cert.nameEs, date: cert.dateEs }
+			: { name: cert.nameEn, date: cert.dateEn };
+	const { name, date } = info;
+	const Icon = getCertIcon(cert.id, cert.issuer);
+
+	const sharedProps = { name, date, issuer: cert.issuer, url: cert.url, Icon };
+
+	return cert.url ? (
+		<motion.a
+			whileHover={{ x: 3 }}
+			transition={{ type: "spring", stiffness: 350, damping: 22 }}
+			key={cert.id}
+			href={cert.url}
+			target="_blank"
+			rel="noopener noreferrer"
+			className="flex gap-3 pb-3.5 border-b border-[var(--border-default)] last:border-0 last:pb-0 group/cert cursor-pointer text-left w-full"
+		>
+			<CertContent {...sharedProps} />
+		</motion.a>
+	) : (
+		<div
+			key={cert.id}
+			className="flex gap-3 pb-3.5 border-b border-[var(--border-default)] last:border-0 last:pb-0 text-left w-full"
+		>
+			<CertContent {...sharedProps} />
+		</div>
+	);
 };
 
 export const CertificationsCard: React.FC<CertificationsCardProps> = ({
@@ -49,68 +128,9 @@ export const CertificationsCard: React.FC<CertificationsCardProps> = ({
 
 			{/* List Container without scrollbar visual */}
 			<div className="certs-scroll-fade flex-1 overflow-visible min-[900px]:overflow-y-auto pr-1 flex flex-col gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-				{certifications.map((cert) => {
-					const name = lang === "es" ? cert.nameEs : cert.nameEn;
-					const date = lang === "es" ? cert.dateEs : cert.dateEn;
-					const Icon = getCertIcon(cert.id, cert.issuer);
-
-					const content = (
-						<>
-							{/* Left: Icon Badge */}
-							<div className="flex-shrink-0 mt-0.5 select-none">
-								<div className="w-8 h-8 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-default)] flex items-center justify-center text-secondary group-hover/cert:border-[var(--border-hover)] transition-colors">
-									<Icon className="w-4 h-4 text-secondary group-hover/cert:text-primary transition-colors" />
-								</div>
-							</div>
-
-							{/* Right: Content details */}
-							<div className="flex-1 flex flex-col gap-0.5">
-								<div className="flex justify-between items-start gap-3">
-									<span className="text-[14.5px] font-semibold text-primary leading-snug group-hover/cert:text-[var(--status-blue)] transition-all duration-150">
-										{name}
-									</span>
-									{cert.url && (
-										<ExternalLink
-											size={12}
-											className="text-secondary opacity-60 group-hover/cert:opacity-100 group-hover/cert:text-[var(--status-blue)] group-hover/cert:translate-x-0.5 group-hover/cert:-translate-y-0.5 transition-all flex-shrink-0 mt-0.5"
-										/>
-									)}
-								</div>
-
-								<div className="flex flex-wrap items-center justify-between gap-1.5 text-[12.5px] text-secondary font-medium mt-0.5 font-normal">
-									<span>
-										{cert.issuer} · {date}
-									</span>
-								</div>
-							</div>
-						</>
-					);
-
-					if (cert.url) {
-						return (
-							<motion.a
-								whileHover={{ x: 3 }}
-								transition={{ type: "spring", stiffness: 350, damping: 22 }}
-								key={cert.id}
-								href={cert.url}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="flex gap-3 pb-3.5 border-b border-[var(--border-default)] last:border-0 last:pb-0 group/cert cursor-pointer text-left w-full"
-							>
-								{content}
-							</motion.a>
-						);
-					}
-
-					return (
-						<div
-							key={cert.id}
-							className="flex gap-3 pb-3.5 border-b border-[var(--border-default)] last:border-0 last:pb-0 text-left w-full"
-						>
-							{content}
-						</div>
-					);
-				})}
+				{certifications.map((cert) => (
+					<CertItem key={cert.id} cert={cert} lang={lang} />
+				))}
 			</div>
 		</motion.div>
 	);

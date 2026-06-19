@@ -6,31 +6,30 @@ export interface ContactData {
 	website: string;
 }
 
+const getNetworkError = (error: unknown): string =>
+	error instanceof Error ? error.message : "Network error";
+
+const getHttpError = async (response: Response): Promise<string> => {
+	const body = await response.json().catch(() => ({}));
+	return body.error || `HTTP error ${response.status}`;
+};
+
 export const sendContactMessage = async (
 	data: ContactData,
 ): Promise<{ success: boolean; error?: string }> => {
 	try {
 		const response = await fetch("/api/contact", {
 			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
+			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
 
 		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}));
-			return {
-				success: false,
-				error: errorData.error || `HTTP error ${response.status}`,
-			};
+			return { success: false, error: await getHttpError(response) };
 		}
 
 		return { success: true };
 	} catch (error) {
-		return {
-			success: false,
-			error: error instanceof Error ? error.message : "Network error",
-		};
+		return { success: false, error: getNetworkError(error) };
 	}
 };

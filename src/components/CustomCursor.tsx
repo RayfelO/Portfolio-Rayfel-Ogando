@@ -21,16 +21,32 @@ const CLICKABLE_SELECTOR = [
 	".cursor-zoom-out",
 ].join(",");
 
-export const CustomCursor: React.FC = () => {
+const useThemeSync = () => {
+	const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+	useEffect(() => {
+		const initialTheme = document.documentElement.dataset.theme;
+		setTheme(initialTheme === "light" ? "light" : "dark");
+
+		const observer = new MutationObserver(() => {
+			const current = document.documentElement.dataset.theme;
+			setTheme(current === "light" ? "light" : "dark");
+		});
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["data-theme"],
+		});
+		return () => observer.disconnect();
+	}, []);
+
+	return theme;
+};
+
+const useCursorTracking = () => {
 	const [isVisible, setIsVisible] = useState(false);
 	const [isHoveringClickable, setIsHoveringClickable] = useState(false);
-	const [theme, setTheme] = useState<"dark" | "light">("dark");
 	const cursorX = useMotionValue(-100);
 	const cursorY = useMotionValue(-100);
-
-	const springConfig = { damping: 28, stiffness: 400 };
-	const cursorXSpring = useSpring(cursorX, springConfig);
-	const cursorYSpring = useSpring(cursorY, springConfig);
 
 	useEffect(() => {
 		const moveCursor = (e: MouseEvent) => {
@@ -61,33 +77,67 @@ export const CustomCursor: React.FC = () => {
 		};
 	}, [cursorX, cursorY, isVisible]);
 
-	// Sync theme from data-theme attribute
-	useEffect(() => {
-		const initialTheme = document.documentElement.dataset.theme;
-		setTheme(initialTheme === "light" ? "light" : "dark");
+	return { isVisible, isHoveringClickable, cursorX, cursorY };
+};
 
-		const observer = new MutationObserver(() => {
-			const current = document.documentElement.dataset.theme;
-			setTheme(current === "light" ? "light" : "dark");
-		});
-		observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ["data-theme"],
-		});
-		return () => observer.disconnect();
-	}, []);
+function getCursorAnimation(isVisible: boolean) {
+	return { opacity: isVisible ? 1 : 0, scale: isVisible ? 1 : 0.5 };
+}
 
-	const brandColor = "#2b4588";
+function getCursorRingStyle(
+	isHoveringClickable: boolean,
+	ringBorder: string,
+	ringBg: string,
+) {
+	return {
+		width: isHoveringClickable ? 40 : 20,
+		height: isHoveringClickable ? 40 : 20,
+		borderWidth: isHoveringClickable ? 2 : 1,
+		borderStyle: "solid" as const,
+		borderColor: ringBorder,
+		backgroundColor: ringBg,
+	};
+}
 
-	const ringBorder = theme === "light" ? brandColor : "rgba(255,255,255,0.75)";
-	const ringBg = isHoveringClickable
-		? theme === "light"
-			? "rgba(43,69,136,0.08)"
-			: "rgba(255,255,255,0.12)"
-		: theme === "light"
-			? "rgba(43,69,136,0.12)"
-			: "rgba(255,255,255,0.18)";
-	const dotColor = theme === "light" ? brandColor : "rgba(255,255,255,0.95)";
+const CursorDot: React.FC<{ dotColor: string }> = ({ dotColor }) => (
+	<motion.div
+		className="absolute rounded-full"
+		initial={{ scale: 0, opacity: 0 }}
+		animate={{ scale: 1, opacity: 1 }}
+		exit={{ scale: 0, opacity: 0 }}
+		transition={{ duration: 0.15 }}
+		style={{ width: 4, height: 4, backgroundColor: dotColor }}
+	/>
+);
+
+const CURSOR_STYLES = {
+	light: {
+		ringBorder: "#2b4588",
+		ringBgHover: "rgba(43,69,136,0.08)",
+		ringBgDefault: "rgba(43,69,136,0.12)",
+		dotColor: "#2b4588",
+	},
+	dark: {
+		ringBorder: "rgba(255,255,255,0.75)",
+		ringBgHover: "rgba(255,255,255,0.12)",
+		ringBgDefault: "rgba(255,255,255,0.18)",
+		dotColor: "rgba(255,255,255,0.95)",
+	},
+} as const;
+
+export const CustomCursor: React.FC = () => {
+	const theme = useThemeSync();
+	const { isVisible, isHoveringClickable, cursorX, cursorY } =
+		useCursorTracking();
+
+	const springConfig = { damping: 28, stiffness: 400 };
+	const cursorXSpring = useSpring(cursorX, springConfig);
+	const cursorYSpring = useSpring(cursorY, springConfig);
+
+	const s = CURSOR_STYLES[theme];
+	const ringBorder = s.ringBorder;
+	const ringBg = isHoveringClickable ? s.ringBgHover : s.ringBgDefault;
+	const dotColor = s.dotColor;
 
 	return (
 		<motion.div
@@ -98,38 +148,19 @@ export const CustomCursor: React.FC = () => {
 				translateX: "-50%",
 				translateY: "-50%",
 			}}
-			animate={{
-				opacity: isVisible ? 1 : 0,
-				scale: isVisible ? 1 : 0.5,
-			}}
+			animate={getCursorAnimation(isVisible)}
 			transition={{ duration: 0.15, ease: "easeOut" }}
 		>
 			<motion.div
 				className="rounded-full backdrop-blur-[2px]"
-				style={{
-					width: isHoveringClickable ? 40 : 20,
-					height: isHoveringClickable ? 40 : 20,
-					borderWidth: isHoveringClickable ? 2 : 1,
-					borderStyle: "solid",
-					borderColor: ringBorder,
-					backgroundColor: ringBg,
-				}}
+				style={getCursorRingStyle(isHoveringClickable, ringBorder, ringBg)}
 				transition={{
 					type: "spring",
 					stiffness: 400,
 					damping: 25,
 				}}
 			/>
-			{isHoveringClickable && (
-				<motion.div
-					className="absolute rounded-full"
-					initial={{ scale: 0, opacity: 0 }}
-					animate={{ scale: 1, opacity: 1 }}
-					exit={{ scale: 0, opacity: 0 }}
-					transition={{ duration: 0.15 }}
-					style={{ width: 4, height: 4, backgroundColor: dotColor }}
-				/>
-			)}
+			{isHoveringClickable && <CursorDot dotColor={dotColor} />}
 		</motion.div>
 	);
 };

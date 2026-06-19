@@ -1,17 +1,14 @@
 export type Theme = "dark" | "light";
 
+const VALID_THEMES = new Set<Theme>(["dark", "light"]);
+
 export const getInitialTheme = (): Theme => {
-	if (typeof window !== "undefined" && window.localStorage) {
-		const stored = window.localStorage.getItem("theme") as Theme | null;
-		if (stored === "dark" || stored === "light") {
-			return stored;
-		}
-		const userMedia = window.matchMedia("(prefers-color-scheme: light)");
-		if (userMedia.matches) {
-			return "light";
-		}
-	}
-	return "dark"; // Default is dark mode
+	if (typeof window === "undefined") return "dark";
+	const stored = window.localStorage.getItem("theme");
+	if (VALID_THEMES.has(stored as Theme)) return stored as Theme;
+	return window.matchMedia("(prefers-color-scheme: light)").matches
+		? "light"
+		: "dark";
 };
 
 export const applyTheme = (theme: Theme) => {
